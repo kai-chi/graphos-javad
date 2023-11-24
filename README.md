@@ -33,7 +33,7 @@ For a sample test case, create a file (e.g., V13E-256.in) in the datasets folder
 
 source  destination  (1 for vertex and 0 for edge)
 
-for example, a full graph with 4 nodes will be like this:\
+for example, a full graph with 4 nodes will be like this:
 
 1 1 1\
 2 2 1\
@@ -44,7 +44,7 @@ for example, a full graph with 4 nodes will be like this:\
 1 4 0\
 2 3 0\
 2 4 0\
-3 4 0\
+3 4 0
 
 Be careful not add an extra newline at the end of the file
 

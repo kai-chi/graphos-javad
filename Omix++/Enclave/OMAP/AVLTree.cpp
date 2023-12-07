@@ -1284,7 +1284,7 @@ string AVLTree::search(Node* rootNode, Bid omapKey) {
     unsigned long long lastPos = rootNode->pos;
     unsigned long long newPos = RandomPath();
     rootNode->pos = newPos;
-    string res = "";
+    string res(16, '\0');
     Bid dumyID = oram->nextDummyCounter;
     Node* tmpDummyNode = new Node();
     tmpDummyNode->isDummy = true;
@@ -1333,7 +1333,10 @@ string AVLTree::search(Node* rootNode, Bid omapKey) {
         delete head;
     } while (oram->readCnt <= upperBound);
     delete tmpDummyNode;
-    res.assign(resVec.begin(), resVec.end());
+    for (int i = 0; i < 16; i++) {
+        res[i] = Bid::conditional_select(resVec[i], (byte_t) 0, found);
+    }
+//    res.assign(resVec.begin(), resVec.end());
     return res;
 }
 

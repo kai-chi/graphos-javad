@@ -324,6 +324,289 @@ std::string exec(const char* cmd) {
 /* Application entry */
 #define _T(x) x
 
+void bitonicSort(vector<Node*>* nodes, int step);
+void bitonic_sort(vector<Node*>* nodes, int low, int n, int dir, int step);
+void bitonic_merge(vector<Node*>* nodes, int low, int n, int dir, int step);
+void compare_and_swap(Node* item_i, Node* item_j, int dir, int step);
+int greatest_power_of_two_less_than(int n);
+
+void bitonicSort(vector<Node*>* nodes, int step) {
+    int len = nodes->size();
+    bitonic_sort(nodes, 0, len, 1, step);
+}
+
+void bitonic_sort(vector<Node*>* nodes, int low, int n, int dir, int step) {
+    if (n > 1) {
+        int middle = n / 2;
+        bitonic_sort(nodes, low, middle, !dir, step);
+        bitonic_sort(nodes, low + middle, n - middle, dir, step);
+        bitonic_merge(nodes, low, n, dir, step);
+    }
+}
+
+void bitonic_merge(vector<Node*>* nodes, int low, int n, int dir, int step) {
+    if (n > 1) {
+        int m = greatest_power_of_two_less_than(n);
+
+        for (int i = low; i < (low + n - m); i++) {
+            if (i != (i + m)) {
+                compare_and_swap((*nodes)[i], (*nodes)[i + m], dir, step);
+            }
+        }
+
+        bitonic_merge(nodes, low, m, dir, step);
+        bitonic_merge(nodes, low + m, n - m, dir, step);
+    }
+}
+
+void compare_and_swap(Node* item_i, Node* item_j, int dir, int step) {
+    if (step == 1) {
+        if (dir == (item_i->key > item_j->key ? 1 : 0)) {
+            std::swap(*item_i, *item_j);
+        }
+    } else {
+        if (dir == (item_i->evictionNode > item_j->evictionNode ? 1 : 0)) {
+            std::swap(*item_i, *item_j);
+        }
+    }
+}
+
+int greatest_power_of_two_less_than(int n) {
+    int k = 1;
+    while (k > 0 && k < n) {
+        k = k << 1;
+    }
+    return k >> 1;
+}
+
+int permutationIterator = 0;
+unsigned long long indx = 1;
+map<unsigned long long, unsigned long long> permutation;
+
+int sortedArrayToBST(vector<Node*>* nodes, long long start, long long end, unsigned long long& pos, Bid& node) {
+    if (start > end) {
+        pos = -1;
+        node = 0;
+        return 0;
+    }
+
+    unsigned long long mid = (start + end) / 2;
+    Node *root = (*nodes)[mid];
+
+    int leftHeight = sortedArrayToBST(nodes, start, mid - 1, root->leftPos, root->leftID);
+
+    int rightHeight = sortedArrayToBST(nodes, mid + 1, end, root->rightPos, root->rightID);
+    root->pos = permutation[permutationIterator];
+    permutationIterator++;
+    root->height = max(leftHeight, rightHeight) + 1;
+    pos = root->pos;
+    node = root->key;
+    return root->height;
+}
+
+void initializeORAM(long long maxSize, bytes<Key> secretkey, Bid& rootKey, unsigned long long& rootPos, map<Bid, string>* pairs, vector<long long>* indexes, vector<block>* ciphertexts, size_t& blockCount, unsigned long long& storeBlockSize) {
+    int depth = (int) (ceil(log2(maxSize)) - 1) + 1;
+    int maxOfRandom = (long long) (pow(2, depth));
+
+
+    int j = 0;
+    int cnt = 0;
+    for (int i = 0; i < maxOfRandom * 4; i++) {
+        if (i % 1000000 == 0) {
+            printf("%d/%d\n", i, maxOfRandom * 4);
+        }
+        if (cnt == 4) {
+            j++;
+            cnt = 0;
+        }
+        permutation[i] = (j + 1) % maxOfRandom;
+        cnt++;
+    }
+
+
+
+    vector<Node*> nodes;
+    for (auto pair : (*pairs)) {
+        Node* node = new Node();
+        node->key = pair.first;
+        node->index = indx++;
+        std::fill(node->value.begin(), node->value.end(), 0);
+        std::copy(pair.second.begin(), pair.second.end(), node->value.begin());
+        node->leftID = 0;
+        node->leftPos = -1;
+        node->rightPos = -1;
+        node->rightID = 0;
+        node->pos = 0;
+        node->isDummy = false;
+        node->height = 1; // new node is initially added at leaf
+        nodes.push_back(node);
+    }
+
+    bitonicSort(&nodes, 1);
+    printf("Creating BST of %d Nodes\n", nodes.size());
+    sortedArrayToBST(&nodes, 0, nodes.size() - 1, rootPos, rootKey);
+    printf("Inserting in ORAM\n");
+
+    int size = (int) nodes.size();
+    for (int i = size; i < maxOfRandom * Z; i++) {
+        Bid bid;
+        bid = 9223372036854775807 + i;
+        Node* node = new Node();
+        node->key = bid;
+        node->index = indx++;
+        std::fill(node->value.begin(), node->value.end(), 0);
+        std::copy(string("").begin(), string("").end(), node->value.begin());
+        node->leftID = 0;
+        node->leftPos = -1;
+        node->rightPos = -1;
+        node->rightID = 0;
+        node->pos = 0;
+        node->isDummy = false;
+        node->height = 1; // new node is initially added at leaf
+        node->isDummy = true;
+        node->pos = permutation[permutationIterator];
+        permutationIterator++;
+        nodes.push_back(node);
+    }
+
+    //----------------------------------------------------------------
+    AES::Setup();
+    unsigned long long bucketCount = maxOfRandom * 2 - 1;
+    unsigned long long INF = 9223372036854775807 - (bucketCount);
+
+    printf("Number of leaves:%lld\n", maxOfRandom);
+    printf("depth:%lld\n", depth);
+
+    unsigned long long nextDummyCounter = INF;
+    unsigned long long blockSize = sizeof (Node); // B  
+    printf("block size is:%d\n", blockSize);
+    blockCount = (size_t) (Z * bucketCount);
+    storeBlockSize = (size_t) (IV + AES::GetCiphertextLength((int) (Z * (blockSize))));
+    unsigned long long clen_size = AES::GetCiphertextLength((int) (blockSize) * Z);
+    unsigned long long plaintext_size = (blockSize) * Z;
+    unsigned long long maxHeightOfAVLTree = (int) floor(log2(blockCount)) + 1;
+
+    unsigned long long first_leaf = bucketCount / 2;
+
+    Bucket* bucket = new Bucket();
+
+
+
+    int i;
+    printf("Setting Nodes Eviction ID\n");
+    for (i = 0; i < nodes.size(); i++) {
+        nodes[i]->evictionNode = nodes[i]->pos + first_leaf;
+    }
+
+    printf("Sorting\n");
+    bitonicSort(&nodes, 2);
+
+    vector<Bucket> buckets;
+
+    long long first_bucket_of_last_level = bucketCount / 2;
+    j = 0;
+
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        if (i % 100000 == 0) {
+            printf("Creating Buckets:%d/%d\n", i, nodes.size());
+        }
+        Node* cureNode = nodes[i];
+        long long curBucketID = nodes[i]->evictionNode;
+
+        Block &curBlock = (*bucket)[j];
+        curBlock.data.resize(blockSize, 0);
+
+        std::array<byte_t, sizeof (Node) > data;
+
+        const byte_t* begin = reinterpret_cast<const byte_t*> (std::addressof(*cureNode));
+        const byte_t* end = begin + sizeof (Node);
+        std::copy(begin, end, std::begin(data));
+
+        block tmp(data.begin(), data.end());
+
+        if (cureNode->isDummy) {
+            curBlock.id = 0;
+        } else {
+            curBlock.id = cureNode->index;
+        }
+        for (int k = 0; k < tmp.size(); k++) {
+            if (cureNode->isDummy == false) {
+                curBlock.data[k] = tmp[k];
+            }
+        }
+        delete cureNode;
+        j++;
+
+        if (j == Z) {
+            (*indexes).push_back(curBucketID);
+            buckets.push_back((*bucket));
+            delete bucket;
+            bucket = new Bucket();
+            j = 0;
+        }
+    }
+
+    for (int i = 0; i < first_bucket_of_last_level; i++) {
+        if (i % 100000 == 0) {
+            printf("Adding Upper Levels Dummy Buckets:%d/%d\n", i, nodes.size());
+        }
+        for (int z = 0; z < Z; z++) {
+            Block &curBlock = (*bucket)[z];
+            curBlock.id = 0;
+            curBlock.data.resize(blockSize, 0);
+        }
+        (*indexes).push_back(i);
+        buckets.push_back((*bucket));
+        delete bucket;
+        bucket = new Bucket();
+    }
+    delete bucket;
+
+    for (int i = 0; i < (*indexes).size(); i++) {
+        block buffer;
+        for (int z = 0; z < Z; z++) {
+            Block b = buckets[i][z];
+            buffer.insert(buffer.end(), b.data.begin(), b.data.end());
+        }
+        block ciphertext = AES::Encrypt(secretkey, buffer, clen_size, plaintext_size);
+        (*ciphertexts).push_back(ciphertext);
+    }
+}
+
+void initializeNodes(bytes<Key> secretkey, map<Bid, string>* pairs, vector<block>* ciphertexts) {
+    vector<Node*> nodes;
+    for (auto pair : (*pairs)) {
+        Node* node = new Node();
+        node->key = pair.first;
+        node->index = 0;
+        std::fill(node->value.begin(), node->value.end(), 0);
+        std::copy(pair.second.begin(), pair.second.end(), node->value.begin());
+        node->leftID = 0;
+        node->leftPos = -1;
+        node->rightPos = -1;
+        node->rightID = 0;
+        node->pos = 0;
+        node->isDummy = false;
+        node->height = 1; // new node is initially added at leaf
+        nodes.push_back(node);
+    }
+
+    unsigned long long blockSize = sizeof (Node);
+    unsigned long long clen_size = AES::GetCiphertextLength((int) (blockSize));
+    unsigned long long plaintext_size = (blockSize);
+
+    for (int i = 0; i < nodes.size(); i++) {
+        std::array<byte_t, sizeof (Node) > data;
+
+        const byte_t* begin = reinterpret_cast<const byte_t*> (std::addressof((*nodes[i])));
+        const byte_t* end = begin + sizeof (Node);
+        std::copy(begin, end, std::begin(data));
+
+        block buffer(data.begin(), data.end());
+        block ciphertext = AES::Encrypt(secretkey, buffer, clen_size, plaintext_size);
+        (*ciphertexts).push_back(ciphertext);
+    }
+}
 
 int SGX_CDECL main(int argc, char *argv[]) {
     (void) (argc);
@@ -853,12 +1136,53 @@ CLEANUP:
 
 
     /* My Codes */
-    int size = 4096;
+    int maxSize = 4096;
     if (argc == 2) {
-        size = stoi(argv[1]);
+        maxSize = stoi(argv[1]);
     }
-//        ecall_measure_omap_speed(global_eid, &t, size);
-        ecall_measure_omap_setup_speed(global_eid, &t, size);
+    //        ecall_measure_omap_speed(global_eid, &t, maxSize);
+    //        ecall_measure_omap_setup_speed(global_eid, &t, maxSize);
+
+
+
+    //******************************************************************************
+    //******************************************************************************
+    //*************************INITIALIZE ORAM FROM CLIENT**************************
+    //******************************************************************************
+    //******************************************************************************
+
+    bytes<Key> secretkey{0};
+    Bid rootKey;
+    unsigned long long rootPos;
+    map<Bid, string> pairs;
+    vector<long long> indexes;
+    vector<block> ciphertexts;
+    size_t blockCount;
+    unsigned long long storeBlockSize;
+
+    for (int i = 1; i < maxSize / 10; i++) {
+        Bid k = i;
+        pairs[k] = "test_" + to_string(i);
+    }
+
+    initializeORAM(maxSize, secretkey, rootKey, rootPos, &pairs, &indexes, &ciphertexts, blockCount, storeBlockSize);
+    ocall_setup_ramStore(blockCount, storeBlockSize);
+    ocall_nwrite_ramStore_by_client(&indexes, &ciphertexts);
+    ecall_setup_omap_by_client(global_eid, maxSize, (const char*) rootKey.id.data(), rootPos, (const char*) secretkey.data());
+
+    char* val = new char[16];
+    Bid id = 3;
+
+    ecall_read_node(global_eid, (const char*) id.id.data(), val);
+    assert(strcmp(val, "test_3") == 0);
+    //        cout<<"Setup was Successful"<<endl;
+
+    //******************************************************************************
+    //******************************************************************************
+
+
+
+
 
 
     /* Destroy the enclave */

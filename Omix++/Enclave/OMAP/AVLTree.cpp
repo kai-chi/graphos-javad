@@ -1311,9 +1311,12 @@ string AVLTree::search(Node* rootNode, Bid omapKey) {
         lastPos = Node::conditional_select(head->rightPos, lastPos, !cond1 && !cond2 && cond3);
 
         curKey = dumyID;
+
+        bool leftIsZero = head->leftID.isZero();
+        bool rightIsZero = head->rightID.isZero();
         for (int k = 0; k < curKey.id.size(); k++) {
-            curKey.id[k] = Node::conditional_select(head->leftID.id[k], curKey.id[k], !cond1 && cond2);
-            curKey.id[k] = Node::conditional_select(head->rightID.id[k], curKey.id[k], !cond1 && !cond2 && cond3);
+            curKey.id[k] = Node::conditional_select(head->leftID.id[k], curKey.id[k], !cond1 && cond2 && !leftIsZero);
+            curKey.id[k] = Node::conditional_select(head->rightID.id[k], curKey.id[k], !cond1 && !cond2 && cond3 && !rightIsZero);
         }
 
         newPos = Node::conditional_select(rnd, newPos, cond1);
@@ -1322,12 +1325,13 @@ string AVLTree::search(Node* rootNode, Bid omapKey) {
 
         for (int i = 0; i < 16; i++) {
             resVec[i] = Bid::conditional_select(head->value[i], resVec[i], !cond1);
-        }
+        }        
 
-        dummyState = Node::conditional_select(dummyState + 1, dummyState, !cond1 && !cond2 && !cond3 && cond4);
+        dummyState = Node::conditional_select(1, dummyState, !cond1 && !cond2 && !cond3 && cond4);               
+        dummyState = Node::conditional_select(1, dummyState, !cond4 && ((!cond1 && cond2 && leftIsZero)|| (!cond1 && !cond2 && cond3 && rightIsZero) ));        
         found = Node::conditional_select(true, found, !cond1 && !cond2 && !cond3 && cond4);
         delete head;
-    } while (!found || oram->readCnt <= upperBound);
+    } while (oram->readCnt <= upperBound);
     delete tmpDummyNode;
     res.assign(resVec.begin(), resVec.end());
     return res;

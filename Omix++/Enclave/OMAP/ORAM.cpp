@@ -78,9 +78,9 @@ ORAM::~ORAM() {
 
 void ORAM::InitializeBucketsOneByOne() {
     for (long long i = 0; i < bucketCount; i++) {
-        if (i % 10000 == 0) {
-            printf("%d/%d\n", i, bucketCount);
-        }
+//        if (i % 10000 == 0) {
+//            printf("%d/%d\n", i, bucketCount);
+//        }
         Bucket bucket;
         for (int z = 0; z < Z; z++) {
             bucket[z].id = 0;
@@ -130,7 +130,7 @@ void ORAM::InitializeORAMBuckets() {
 
 
     ocall_stop_timer(&time, 687);
-    printf("ORAM Initialization Time:%f\n", time);
+    printf("ORAM Initialization Time: %f\n", time);
 }
 
 void ORAM::WriteBucket(long long index, Bucket bucket) {

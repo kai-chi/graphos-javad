@@ -8,6 +8,12 @@
 
 static OMAP* omap = NULL;
 
+void ecall_print_tree() {
+    if (omap != NULL) {
+        omap->printTree();
+    }
+}
+
 void ecall_setup_oram(int max_size) {
     bytes<Key> tmpkey{0};
     omap = new OMAP(max_size, tmpkey);
@@ -38,6 +44,13 @@ void ecall_write_node(const char *bid, const char* value) {
     omap->insert(inputBid, val);
 }
 
+void ecall_delete_node(const char *bid) {
+    std::array<byte_t, ID_SIZE> id;
+    std::memcpy(id.data(), bid, ID_SIZE);
+    Bid inputBid(id);
+    omap->deleteNode(inputBid);
+}
+
 double ecall_measure_oram_speed(int testSize) {
     return 0;
 }
@@ -65,13 +78,13 @@ void check_memory(string text) {
 }
 
 double ecall_measure_omap_speed(int testSize) {
-    double time1, time2, total = 0;
+    double time1, time2, total = 0, totalWrite = 0, totalRead = 0;
     ecall_setup_oram(testSize);
     printf("Warming UP DOMAP:\n");
     for (int i = 0; i < 2000; i++) {
-        if (i % 10 == 0) {
-            printf("%d/%d\n",i,2000);
-        }
+//        if (i % 10 == 0) {
+//            printf("%d/%d\n",i,2000);
+//        }
         total = 0;
         uint32_t randval;
         sgx_read_rand((unsigned char *) &randval, 4);
@@ -99,6 +112,7 @@ double ecall_measure_omap_speed(int testSize) {
         assert(string(val) == str);
         delete val;
     }
+    printf("\n");
 
     printf("begin test\n");
     omap->treeHandler->logTime = true;
@@ -109,6 +123,8 @@ double ecall_measure_omap_speed(int testSize) {
 
     for (int j = 0; j < 10; j++) {
         total = 0;
+//        totalWrite = 0;
+//        totalRead = 0;
         for (int i = 1; i <= 10; i++) {
             uint32_t randval;
             sgx_read_rand((unsigned char *) &randval, 4);
@@ -127,19 +143,24 @@ double ecall_measure_omap_speed(int testSize) {
             ocall_start_timer(535);
             ecall_write_node((const char*) id.data(), (const char*) value.data());
             ocall_stop_timer(&time1, 535);
-            printf("Write Time:%f\n", time1);
+//            printf("Write Time:%f\n", time1);
             char* val = new char[16];
             ocall_start_timer(535);
             ecall_read_node((const char*) id.data(), val);
             ocall_stop_timer(&time2, 535);
-            printf("Read Time:%f\n", time2);
+//            printf("Read Time:%f\n", time2);
             total += time1 + time2;
+            totalWrite += time1;
+            totalRead += time2;
             //printf("expected value:%s result:%s\n",str.c_str(),string(val).c_str());
             assert(string(val) == str);
-            delete val;
+            delete[] val;
         }
-        printf("Average OMAP Access Time: %f\n", total / 200);
+//        printf("Average OMAP Access Time: %f\n", total / 200);
+
     }
+    printf("Average OMAP Read Time: %f\n", totalRead / 100);
+    printf("Average OMAP Write Time: %f\n", totalWrite / 100);
 
     vector<string> names;
     names.push_back("Write Balance:");
@@ -147,12 +168,12 @@ double ecall_measure_omap_speed(int testSize) {
     names.push_back("Read Tree Traverse:");
     names.push_back("Read Evict Buckets:");
 
-    for (int i = 0; i < names.size(); i++) {
-        printf("%s:\n", names[i].c_str());
-        for (int j = 0; j < omap->treeHandler->times[i].size(); j++) {
-            printf("%f\n", omap->treeHandler->times[i][j]);
-        }
-    }
+//    for (int i = 0; i < names.size(); i++) {
+//        printf("%s:\n", names[i].c_str());
+//        for (int j = 0; j < omap->treeHandler->times[i].size(); j++) {
+//            printf("%f\n", omap->treeHandler->times[i][j]);
+//        }
+//    }
 
     return total / (20);
 }

@@ -50,6 +50,30 @@ string OMAP::find(Bid omapKey) {
     return res;
 }
 
+void OMAP::deleteNode(Bid omapKey) {
+    double y;
+    if (treeHandler->logTime) {
+        ocall_start_timer(944);
+    }
+    if (rootKey == 0) {
+        return;
+    }
+    treeHandler->startOperation(false);
+    int height;
+    unsigned long long parentPos = rootPos;
+    rootKey = treeHandler->deleteNode3(rootKey, rootPos, rootKey, parentPos, 0, omapKey, height, false);
+    if (treeHandler->logTime) {
+        ocall_stop_timer(&y, 944);
+        treeHandler->times[4].push_back(y);
+        ocall_start_timer(944);
+    }
+    treeHandler->finishOperation();
+    if (treeHandler->logTime) {
+        ocall_stop_timer(&y, 944);
+        treeHandler->times[3].push_back(y);
+    }
+}
+
 void OMAP::insert(Bid omapKey, string value) {
     if (treeHandler->logTime) {
         treeHandler->times[0].push_back(0);

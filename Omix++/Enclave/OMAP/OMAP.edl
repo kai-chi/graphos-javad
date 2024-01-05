@@ -6,12 +6,14 @@ enclave {
         public void ecall_setup_oram(int max_size);		
         public void ecall_read_node([in, count=10] const char *bid,[out,size=16] char* value);
         public void ecall_write_node([in, count=10] const char *bid,[in,size=16]const char* value);
+        public void ecall_delete_node([in, count=10] const char *bid);
         public void ecall_setup_omap_by_client(int max_size,[in, count=10] const char *bid,long long rootPos,[in,size=128] const char* secretKey);
         public double ecall_measure_oram_speed(int testSize);
         public double ecall_measure_omap_speed(int testSize);
         public double ecall_measure_eviction_speed(int testSize);
         public double ecall_measure_oram_setup_speed(int testSize);
         public double ecall_measure_omap_setup_speed(int testSize);
+        public void ecall_print_tree();
     };
 
     untrusted {        

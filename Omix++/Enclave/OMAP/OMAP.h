@@ -24,6 +24,7 @@ public:
     virtual ~OMAP();
     void insert(Bid key, string value);
     string find(Bid key);
+    void deleteNode(Bid key);
     void printTree();
     void batchInsert(map<Bid, string> pairs);
     vector<string> batchSearch(vector<Bid> keys);

@@ -39,6 +39,13 @@ public:
     unsigned long long rightPos;
     std::array< byte_t, 24> dum;
 
+    void setValue(std::array<byte_t, 16> val){
+        std::fill(value.begin(), value.end(), 0);
+        for (int i = 0; i < 8; i++) {
+            value[i] = val[i];
+        }
+    }
+
     static Node* clone(Node* oldNode) {
         Node* newNode = new Node();
         newNode->evictionNode = oldNode->evictionNode;
@@ -333,9 +340,12 @@ public:
     bool evictBuckets = false; //is used for AVL calls. It should be set the same as values in default values
     //-----------------------------------------------------------
 
+    // isIncompleteRead tells us if an eviction should happen - if it's a root to leaf scan we don't need eviction (true), and if it's leaf to root scan then we need eviciton and set it to true
     Node* ReadWrite(Bid bid, Node* node, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, bool isIncompleteRead);
     Node* ReadWriteTest(Bid bid, Node* node, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, bool isIncompleteRead);
+    // node - node to write, value - new value to be set for bid,
     Node* ReadWrite(Bid bid, Node* node, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, std::array< byte_t, 16> value, bool overwrite, bool isIncompleteRead);
+    // targetNode - used in the search of avl tree - used for early eviction, targetNode is the targer child
     Node* ReadWrite(Bid bid, unsigned long long lastLeaf, unsigned long long newLeaf, bool isDummy, unsigned long long newChildPos, Bid targetNode);
 
     void start(bool batchWrite);

@@ -85,6 +85,8 @@ private:
     void compare_and_swap(Node* item_i, Node* item_j, int dir);
     void bitonicSort(vector<Node*>* nodes);
     int greatest_power_of_two_less_than(int n);
+    int getBalance(Bid rootKey, unsigned long long& rootPos);
+    Node* minValueNode(Bid rootKey, unsigned long long& rootPos);
     
 public:
     AVLTree(long long maxSize, bytes<Key> secretkey, Bid& rootKey, unsigned long long& rootPos, map<Bid, string>* pairs, map<unsigned long long, unsigned long long>* permutation);
@@ -101,6 +103,8 @@ public:
     Bid searchInsert(Bid rootKey, unsigned long long& pos, Bid key, string& value, int& height, Bid lastID, bool isDummyIns = false);
     //    Node* search(Node* head, Bid key, int newPos = -1);
     string search(Node* head, Bid key);
+    // parentRootRelation = -1 if parentKey->leftChild = rootKey, parentRootRelation=0 if parentKey = rootKey, parentRootRelation=1 if parentKey->rightChild = rootKey
+    Bid deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, bool isDummyDel);
     void batchSearch(Node* head, vector<Bid> keys, vector<Node*>* results);
     void printTree(Node* root, int indent);
     void startOperation(bool batchWrite = false);

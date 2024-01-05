@@ -30,7 +30,7 @@ endif
 endif
 
 ifeq ($(SGX_DEBUG), 1)
-        SGX_COMMON_FLAGS += -O3#0 -g
+        SGX_COMMON_FLAGS += -O0 -g
 else
         SGX_COMMON_FLAGS += -O3
 endif
@@ -39,7 +39,7 @@ ifeq ($(SUPPLIED_KEY_DERIVATION), 1)
         SGX_COMMON_FLAGS += -DSUPPLIED_KEY_DERIVATION
 endif
 
-OPENSSL_PACKAGE := ./sgxssl
+OPENSSL_PACKAGE := ./sgxssl/Linux/package
 OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/
 
 SGX_COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
@@ -75,7 +75,7 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
-App_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -lsgx_usgxssl -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lcrypto -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR) 
+App_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -lsgx_usgxssld -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lcrypto -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR) 
 
 ifneq ($(SGX_MODE), HW)
 	App_Link_Flags += -lsgx_uae_service_sim
@@ -138,7 +138,7 @@ Enclave_Cpp_Flags := $(Enclave_C_Flags) -nostdinc++
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Enclave_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -Wl,--whole-archive -lsgx_tsgxssl -Wl,--no-whole-archive -lsgx_tsgxssl_crypto \
+Enclave_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -Wl,--whole-archive -lsgx_tsgxssld -Wl,--no-whole-archive -lsgx_tsgxssl_cryptod -lsgx_pthread \
 	-Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
 	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -lsgx_tkey_exchange -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \

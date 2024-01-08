@@ -78,7 +78,7 @@ void check_memory(string text) {
 }
 
 double ecall_measure_omap_speed(int testSize) {
-    double time1, time2, total = 0, totalWrite = 0, totalRead = 0;
+    double time1, time2, time3, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
     ecall_setup_oram(testSize);
     printf("Warming UP DOMAP:\n");
     for (int i = 0; i < 2000; i++) {
@@ -148,10 +148,15 @@ double ecall_measure_omap_speed(int testSize) {
             ocall_start_timer(535);
             ecall_read_node((const char*) id.data(), val);
             ocall_stop_timer(&time2, 535);
+
+            ocall_start_timer(535);
+            ecall_delete_node((const char*) id.data());
+            ocall_stop_timer(&time3, 535);
 //            printf("Read Time:%f\n", time2);
             total += time1 + time2;
             totalWrite += time1;
             totalRead += time2;
+            totalDelete += time3;
             //printf("expected value:%s result:%s\n",str.c_str(),string(val).c_str());
             assert(string(val) == str);
             delete[] val;
@@ -161,6 +166,7 @@ double ecall_measure_omap_speed(int testSize) {
     }
     printf("Average OMAP Read Time: %f\n", totalRead / 100);
     printf("Average OMAP Write Time: %f\n", totalWrite / 100);
+    printf("Average OMAP Delete Time: %f\n", totalDelete / 100);
 
     vector<string> names;
     names.push_back("Write Balance:");

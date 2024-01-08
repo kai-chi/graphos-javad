@@ -19,6 +19,7 @@ def run(size, repetitions):
     initTimes = []
     readTimes = []
     writeTimes = []
+    deleteTimes = []
 
     for i in range(repetitions):
         command = './app ' + str(size)
@@ -41,11 +42,15 @@ def run(size, repetitions):
             elif 'Average OMAP Write Time' in line:
                 time = float(commons.escape_ansi(line.split(": ", 1)[1]))
                 writeTimes.append(time)
+            elif 'Average OMAP Delete Time' in line:
+                time = float(commons.escape_ansi(line.split(": ", 1)[1]))
+                deleteTimes.append(time)
 
     initTime = statistics.median(initTimes)
     readTime = statistics.median(readTimes)
     writeTime = statistics.median(writeTimes)
-    result = str(size) + ',' + str(initTime) + ',' + str(readTime) + ',' + str(writeTime)
+    deleteTime = statistics.median(deleteTimes)
+    result = str(size) + ',' + str(initTime) + ',' + str(readTime) + ',' + str(writeTime) + ',' + str(deleteTime)
     print('Results: ' + result)
     f = open(res_file, 'a')
     f.write(result + '\n')
@@ -56,9 +61,9 @@ def plot(sizes):
     fig = plt.figure(figsize=(10,6))
     platforms = data['sgx'].unique()
 
-    plots = ['initTime', 'readTime', 'writeTime']
+    plots = ['initTime', 'readTime', 'writeTime', 'deleteTime']
     ylabels = ['Initialization Time(milliseconds)','Search Time(milliseconds)',
-               'Insert Time(milliseconds)']
+               'Insert Time(milliseconds)', 'Delete Time(milliseconds)']
     dataV1 = data[data['sgx'] == 'sgxv1']
     for i in range(len(plots)):
         plt.subplot(2, 3, i+1)

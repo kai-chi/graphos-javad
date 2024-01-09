@@ -563,16 +563,40 @@ int SGX_CDECL main(int argc, char *argv[]) {
 //    int id = 16;
 
     // delete 18 with two children and get worst-case rebalancing
-    int ids[] = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
-    int id = 18;
+//    int ids[] = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
+//    int id = 18;
+
+    // delete root with no children
+//    int ids[] = {16};
+//    int id = 16;
+
+    // delete root with one left child
+//    int ids[] = {16, 8};
+//    int id = 16;
+
+    // delete root with one right child
+//    int ids[] = {16, 24};
+//    int id = 16;
+
+    // delete root with two children
+//    int ids[] = {16, 8, 24};
+//    int id = 16;
+
+    // some difficult tree
+    int ids[] = {9,4,12,2,6,10,13,1,3,5,7,11,8};
+    int id = 13;
 
     /* My Codes */
     int maxSize = 32;
     if (argc == 2) {
-        id = stoi(argv[1]);
+        maxSize = stoi(argv[1]);
     }
     printf("maxSize = %d\n", maxSize);
-//    ecall_measure_omap_speed(global_eid, &t, maxSize);
+    if (true) {
+        ecall_measure_omap_speed(global_eid, &t, maxSize);
+        sgx_destroy_enclave(global_eid);
+        return 0;
+    }
 //    ecall_measure_omap_setup_speed(global_eid, &t, maxSize);
 
 
@@ -630,10 +654,10 @@ int SGX_CDECL main(int argc, char *argv[]) {
     ecall_read_node(global_eid, (const char*) k.id.data(), val);
     cout <<"Read " << id << ": " << val << endl;
 
-    id = 32;
-    k = id;
-    ecall_read_node(global_eid, (const char*) k.id.data(), val);
-    cout <<"Read " << id << ": " << val << endl;
+//    id = 32;
+//    k = id;
+//    ecall_read_node(global_eid, (const char*) k.id.data(), val);
+//    cout <<"Read " << id << ": " << val << endl;
 
     //******************************************************************************
     //******************************************************************************

@@ -832,11 +832,17 @@ Node * AVLTree::minValueNode(Bid rootKey, unsigned long long& rootPos) {
         n = oram->ReadWrite(n->leftID, tmpDummyNode, n->leftPos, n->leftPos, true, false, false);
     }
     delete tmpDummyNode;
+#ifdef SGX_DEBUG
     printf("minValueNode after rootKey=%d found: %d\n", rootKey.getValue(), n->key.getValue());
+#endif
     return n;
 }
 
 Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, bool isDummyDel) {
+#if SGX_DEBUG
+    printf("DeleteNode3 rootKey=%d, rootPos=%lld, parentKey=%d, parentPos=%lld, parentRootRelation=%d, key=%d, height=%d, isDummyDel=%d\n",
+           rootKey.getValue(), rootPos, parentKey.getValue(), parentPos, parentRootRelation, key.getValue(), height, isDummyDel);
+#endif
     unsigned long long newP;
     Bid retKey = rootKey;
 
@@ -854,46 +860,66 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         node->rightID = deleteNode3(node->rightID, node->rightPos, node->key, node->pos, 1, key, height, false);
 
     else {
+#if SGX_DEBUG
         printf("Deleting...\n");
+#endif
         if (node->leftID.isZero() || node->rightID.isZero()) {
             if (node->leftID.isZero() && node->rightID.isZero()) {
+#if SGX_DEBUG
                 printf("No child case\n");
+#endif
                 Node *parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
+#if SGX_DEBUG
                 printf("parentNode key=%d, height=%d, leftID=%llu, rightID=%llu, parentRootRelation=%d\n",
                        parentKey.getValue(), parentNode->height, parentNode->leftID.getValue(), parentNode->rightID.getValue(), parentRootRelation);
+#endif
                 if (parentRootRelation == 0) {
                     node->isDummy = true;
-                    rootKey = 0;
-                    rootPos = -1;
-                } else if (parentRootRelation == -1) {
-                    parentNode->leftID.setToZero();
-                    parentNode->leftPos = -1;
-                } else if (parentRootRelation == 1) {
-                    parentNode->rightID.setToZero();
-                    parentNode->rightPos = -1;
-                } else {
-                    printf("WTFFFF\n");
-                }
-                parentNode->height--;
-                newP = RandomPath();
-                printf("Saving parentNode key=%d, height=%d, leftID=%llu, rightID=%llu\n",
+                } else{
+                    if (parentRootRelation == -1) {
+                        parentNode->leftID.setToZero();
+                        parentNode->leftPos = -1;
+                        if (parentNode->rightID.isZero()) {
+                            parentNode->height--;
+                        }
+                    } else if (parentRootRelation == 1) {
+                        parentNode->rightID.setToZero();
+                        parentNode->rightPos = -1;
+                        if (parentNode->leftID.isZero()) {
+                            parentNode->height--;
+                        }
+                    }
+                    else {
+                        printf("WTFFFF\n");
+                    }
+                    newP = RandomPath();
+#if SGX_DEBUG
+                    printf("Saving parentNode key=%d, height=%d, leftID=%llu, rightID=%llu\n",
                        parentKey.getValue(), parentNode->height, parentNode->leftID.getValue(), parentNode->rightID.getValue());
-                oram->ReadWrite(parentKey, parentNode, parentPos, newP, false, false, false);
-                parentNode->pos = newP;
-                parentPos = newP;
-                readWriteCacheNode(parentKey, parentNode, false, false);
+#endif
+                    oram->ReadWrite(parentKey, parentNode, parentPos, newP, false, false, false);
+                    parentNode->pos = newP;
+                    parentPos = newP;
+                    readWriteCacheNode(parentKey, parentNode, false, false);
+
+                }
                 rootKey = 0;
                 rootPos = -1;
+                oram->ReadWrite(node->key, node, node->pos, node->pos, false, false, false);
             } else {
                 // one child case
+#if SGX_DEBUG
                 printf("One child case\n");
+#endif
                 Bid childBid = node->rightID.isZero() ?
                                node->leftID : node->rightID;
                 unsigned long long childPos = node->rightID.isZero() ?
                                               node->leftPos : node->rightPos;
                 Node *parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
+#if SGX_DEBUG
                 printf("parentNode key=%d, height=%d, leftID=%llu, rightID=%llu, parentRootRelation=%d\n",
                        parentKey.getValue(), parentNode->height, parentNode->leftID.getValue(), parentNode->rightID.getValue(), parentRootRelation);
+#endif
                 if (parentRootRelation == 0) {
                     node->isDummy = true;
                     rootKey = 0;
@@ -908,8 +934,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                     printf("WTFFFF\n");
                 }
                 newP = RandomPath();
+#if SGX_DEBUG
                 printf("Saving parentNode key=%d, height=%d, leftID=%llu, rightID=%llu\n",
                        parentKey.getValue(), parentNode->height, parentNode->leftID.getValue(), parentNode->rightID.getValue());
+#endif
                 oram->ReadWrite(parentKey, parentNode, parentPos, newP, false, false, false);
                 parentNode->pos = newP;
                 parentPos = newP;
@@ -922,9 +950,16 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         } else {
             // node with two children
             Node *successor = minValueNode(node->rightID, node->rightPos);
+#if SGX_DEBUG
+            printf("node with two children. Successor key=%d, pos=%lld\n", successor->key.getValue(), successor->pos);
+#endif
             Node *parentNode;
             if (parentRootRelation == 0) {
+#if SGX_DEBUG
                 printf("Removing root\n");
+#endif
+//                parentNode->isDummy = true;
+                newP = RandomPath();
             } else {
                 parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
                 if (parentRootRelation == -1) {
@@ -935,8 +970,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                     parentNode->rightPos = successor->rightPos;
                 }
                     newP = RandomPath();
+#if SGX_DEBUG
                     printf("Saving parentNode key=%d, height=%d, leftID=%llu, rightID=%llu\n",
                            parentKey.getValue(), parentNode->height, parentNode->leftID.getValue(), parentNode->rightID.getValue());
+#endif
                     oram->ReadWrite(parentKey, parentNode, parentPos, newP, false, false, false);
                     parentNode->pos = newP;
                     parentPos = newP;
@@ -951,7 +988,9 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     }
 
     if (rootKey == 0) {
+#if SGX_DEBUG
         printf("If the tree had only one node then return\n");
+#endif
         return rootKey;
     }
 
@@ -976,18 +1015,27 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     int balance = leftHeight - rightHeight;
     int leftBalance = getBalance(node->leftID, node->leftPos);
     int rightBalance = getBalance(node->rightID, node->rightPos);
+#if SGX_DEBUG
     printf("node=%d, height=%d, balance=%d, leftBalance=%d, rightBalance=%d, leftHeight=%d, rightHeight=%d\n",
            node->key.getValue(), node->height, balance, leftBalance, rightBalance, leftHeight, rightHeight);
+#endif
 
 
     // Left Left Case
     if (balance > 1 &&
         leftBalance >= 0) {
+#if SGX_DEBUG
         printf("Left-Left Case: node=%d, leftNode=%d\n", node->key.getValue(), leftNode->key.getValue());
-        Node *leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
-        readWriteCacheNode(leftLeftNode->key, leftLeftNode, false, false);
-        Node *leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
-        readWriteCacheNode(leftRightNode->key, leftRightNode, false, false);
+#endif
+        Node *leftLeftNode = nullptr, *leftRightNode = nullptr;
+        if (!leftNode->leftID.isZero()) {
+            leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
+            readWriteCacheNode(leftLeftNode->key, leftLeftNode, false, false);
+        }
+        if (!leftNode->rightID.isZero()) {
+            leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
+            readWriteCacheNode(leftRightNode->key, leftRightNode, false, false);
+        }
         rotate2(node, leftNode, rightHeight, true);
         newP = RandomPath();
         oram->ReadWrite(node->key, node, node->pos, newP, false, false, false); //WRITE
@@ -1011,7 +1059,9 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     // Left Right Case
     else if (balance > 1 && leftBalance < 0)
     {
+#if SGX_DEBUG
         printf("Left-Right Case\n");
+#endif
 //        if (leftNodeisNull) {
 //            delete leftNode;
 //            leftNode = readWriteCacheNode(node->leftID, tmpDummyNode, true, false); //READ
@@ -1021,26 +1071,33 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 //            readWriteCacheNode(dummy, tmpDummyNode, true, true);
 //        }
 
-
-        Node* leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
-        readWriteCacheNode(leftNode->rightID, leftRightNode, false, false); //READ
+        Node* leftRightNode=nullptr, *leftLeftNode=nullptr, *leftRightLeftNode=nullptr, *leftRightRightNode=nullptr;
+        if (!leftNode->rightID.isZero()) {
+            leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
+            readWriteCacheNode(leftNode->rightID, leftRightNode, false, false); //READ
+        }
 
 
         int leftLeftHeight = 0;
         if (!leftNode->leftID.isZero()) {
-            Node* leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
+            leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
             readWriteCacheNode(leftNode->leftID, leftLeftNode, false, false); //READ
             leftLeftHeight = leftLeftNode->height;
         }
 
-        Node* leftRightLeftNode = oram->ReadWrite(leftRightNode->leftID, tmpDummyNode, leftRightNode->leftPos, leftRightNode->leftPos, true, false, false);
-        readWriteCacheNode(leftRightNode->leftID, leftRightLeftNode, false, false); //READ
+        if (!leftRightNode->leftID.isZero()) {
+            leftRightLeftNode = oram->ReadWrite(leftRightNode->leftID, tmpDummyNode, leftRightNode->leftPos, leftRightNode->leftPos, true, false, false);
+            readWriteCacheNode(leftRightNode->leftID, leftRightLeftNode, false, false); //READ
+        }
 
-//        Node* leftRightRightNode = oram->ReadWrite(leftRightNode->rightID, tmpDummyNode, leftRightNode->rightPos, leftRightNode->rightPos, true, false, false);
-//        readWriteCacheNode(leftRightNode->rightID, leftRightRightNode, false, false); //READ
-
+#if SGX_DEBUG
         printf("Left Rotate node=%d, oppositeNode=%d, targetHeight=%d\n",
                leftNode->key.getValue(), leftRightNode->key.getValue(), leftLeftHeight);
+#endif
+        if (!leftRightNode->rightID.isZero()) {
+            leftRightRightNode = oram->ReadWrite(leftRightNode->rightID, tmpDummyNode, leftRightNode->rightPos, leftRightNode->rightPos, true, false, false);
+            readWriteCacheNode(leftRightNode->rightID, leftRightRightNode, false, false); //READ
+        }
         rotate2(leftNode, leftRightNode, leftLeftHeight, false);
 
         unsigned long long newP = RandomPath();
@@ -1052,8 +1109,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         node->leftID = leftRightNode->key;
         node->leftPos = leftRightNode->pos;
 
+#if SGX_DEBUG
         printf("Right Rotate node=%d, oppositeNode=%d, targetHeight=%d\n",
                node->key.getValue(), leftRightNode->key.getValue(), rightHeight);
+#endif
         rotate2(node, leftRightNode, rightHeight, true);
 
         oram->ReadWrite(leftNode->key, leftNode, oldLeftRightPos, leftNode->pos, false, false, false); //WRITE
@@ -1072,21 +1131,27 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         height = leftRightNode->height;
         retKey = leftRightNode->key;
         delete leftRightNode;
-//        delete leftLeftNode;
         delete leftRightLeftNode;
-//        delete leftRightRightNode;
+        delete leftLeftNode;
+        delete leftRightRightNode;
 //        root->left = leftRotate(root->left);
 //        return rightRotate(root);
     }
 
     // Right Right Case
     else if (balance < -1 && rightBalance <= 0) {
+#if SGX_DEBUG
         printf("Right-Right Case: node=%d, rightNode=%d\n", node->key.getValue(), rightNode->key.getValue());
-        Node *rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
-        readWriteCacheNode(rightLeftNode->key, rightLeftNode, false, false);
-        Node *rightRightNode = oram->ReadWrite(rightNode->rightID, tmpDummyNode, rightNode->rightPos, rightNode->rightPos, true, false, false);
-        readWriteCacheNode(rightRightNode->key, rightRightNode, false, false);
-
+#endif
+        Node *rightLeftNode=nullptr, *rightRightNode=nullptr;
+        if (!rightNode->leftID.isZero()) {
+            rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
+            readWriteCacheNode(rightLeftNode->key, rightLeftNode, false, false);
+        }
+        if (!rightNode->rightID.isZero()) {
+            rightRightNode = oram->ReadWrite(rightNode->rightID, tmpDummyNode, rightNode->rightPos, rightNode->rightPos, true, false, false);
+            readWriteCacheNode(rightRightNode->key, rightRightNode, false, false);
+        }
         rotate2(node, rightNode, leftHeight, false);
 
         unsigned long long newP = RandomPath();
@@ -1111,32 +1176,40 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     else if (balance < -1 &&
         rightBalance > 0)
     {
+#if SGX_DEBUG
         printf("Right-Left Case\n");
-//        if (rightNodeisNull) {
-//            delete rightNode;
-//            rightNode = readWriteCacheNode(node->rightID, tmpDummyNode, true, false); //READ
-//            rightNodeisNull = false;
-//            node->rightPos = rightNode->pos;
-//        }
+#endif
+        Node* rightLeftNode=nullptr, *rightRightNode=nullptr, *rightLeftLeftNode=nullptr, *rightLeftRightNode=nullptr;
 
-        Node* rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
-        readWriteCacheNode(rightNode->leftID, rightLeftNode, true, false); //READ
+        if (!rightNode->leftID.isZero()) {
+            rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
+            readWriteCacheNode(rightNode->leftID, rightLeftNode, true, false); //READ
+        }
 
         int rightRightHeight = 0;
-        if (rightNode->rightID != 0) {
-            Node* rightRightNode = readWriteCacheNode(rightNode->rightID, tmpDummyNode, true, false); //READ
+        if (!rightNode->rightID.isZero()) {
+            rightRightNode = oram->ReadWrite(rightNode->rightID, tmpDummyNode, rightNode->rightPos, rightNode->rightPos, true, false, false);
+            readWriteCacheNode(rightRightNode->key, rightRightNode, true, false); //READ
             rightRightHeight = rightRightNode->height;
-            delete rightRightNode;
         }
 
 
-
+#if SGX_DEBUG
         printf("Right Rotate node=%d, oppositeNode=%d, targetHeight=%d\n",
                rightNode->key.getValue(), rightLeftNode->key.getValue(), rightRightHeight);
+#endif
+        if(!rightLeftNode->leftID.isZero()) {
+            rightLeftLeftNode = oram->ReadWrite(rightLeftNode->leftID, tmpDummyNode, rightLeftNode->leftPos, rightLeftNode->leftPos, true, false, false);
+            readWriteCacheNode(rightLeftNode->leftID, rightLeftLeftNode, false, false); //READ
+        }
+
+        if(!rightLeftNode->rightID.isZero()) {
+            rightLeftRightNode = oram->ReadWrite(rightLeftNode->rightID, tmpDummyNode, rightLeftNode->rightPos, rightLeftNode->rightPos, true, false, false);
+            readWriteCacheNode(rightLeftNode->rightID, rightLeftRightNode, false, false); //READ
+        }
+
         rotate2(rightNode, rightLeftNode, rightRightHeight, true);
 
-        Node* rightLeftLeftNode = oram->ReadWrite(rightLeftNode->leftID, tmpDummyNode, rightLeftNode->leftPos, rightLeftNode->leftPos, true, false, false);
-        readWriteCacheNode(rightLeftNode->leftID, rightLeftLeftNode, false, false); //READ
 
         unsigned long long newP = RandomPath();
         unsigned long long oldLeftRightPos = rightNode->pos;
@@ -1147,8 +1220,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         node->rightID = rightLeftNode->key;
         node->rightPos = rightLeftNode->pos;
 
+#if SGX_DEBUG
         printf("Left Rotate node=%d, oppositeNode=%d, targetHeight=%d\n",
                node->key.getValue(), rightLeftNode->key.getValue(), rightHeight);
+#endif
         rotate2(node, rightLeftNode, leftHeight, false);
 
         oram->ReadWrite(rightNode->key, rightNode, oldLeftRightPos, rightNode->pos, false, false, false); //WRITE
@@ -1166,11 +1241,18 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         rootPos = rightLeftNode->pos;
         height = rightLeftNode->height;
         retKey = rightLeftNode->key;
+        delete rightLeftNode;
+        delete rightRightNode;
+        delete rightLeftLeftNode;
+        delete rightLeftRightNode;
+
 //        root->right = rightRotate(root->right);
 //        return leftRotate(root);
     }
     else {
+#if SGX_DEBUG
         printf("No balance needed\n");
+#endif
         newP = RandomPath();
         oram->ReadWrite(node->key, node, node->pos, newP, false, false, false); //WRITE
         node->pos = newP;
@@ -1178,6 +1260,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         rootPos = node->pos;
         retKey = node->key;
     }
+    delete tmpDummyNode;
     return retKey;
 }
 
@@ -1894,7 +1977,7 @@ void AVLTree::printTree(Node* rt, int indent) {
 
         string value;
         value.assign(root->value.begin(), root->value.end());
-        printf("Key:%lld Height:%lld Pos:%lld LeftID:%lld LeftPos:%lld RightID:%lld RightPos:%lld\n", root->key.getValue(), root->height, root->pos, root->leftID.getValue(), root->leftPos, root->rightID.getValue(), root->rightPos);
+        printf("Key: %lld Height:%lld Pos:%lld LeftID:%lld LeftPos:%lld RightID:%lld RightPos:%lld\n", root->key.getValue(), root->height, root->pos, root->leftID.getValue(), root->leftPos, root->rightID.getValue(), root->rightPos);
         if (root->rightID != 0)
             printTree(oram->ReadWriteTest(root->rightID, tmpDummyNode, root->rightPos, root->rightPos, true, false, true), indent + 4);
         delete tmpDummyNode;

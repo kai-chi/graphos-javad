@@ -77,14 +77,23 @@ void check_memory(string text) {
     free(mem);
 }
 
+long long getValue(std::array< uint8_t, 16> id) {
+    long long result = 0;
+    result += id[0];
+    result += (id[1] << 8);
+    result += (id[2] << 16);
+    result += (id[3] << 24);
+    return result;
+}
+
 double ecall_measure_omap_speed(int testSize) {
-    double time1, time2, time3, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
+    double time1, time2, time3, time4, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
     ecall_setup_oram(testSize);
     printf("Warming UP DOMAP:\n");
     for (int i = 0; i < 2000; i++) {
-//        if (i % 10 == 0) {
-//            printf("%d/%d\n",i,2000);
-//        }
+        if (i % 100 == 0) {
+            printf("%d/%d\n",i,2000);
+        }
         total = 0;
         uint32_t randval;
         sgx_read_rand((unsigned char *) &randval, 4);
@@ -121,51 +130,62 @@ double ecall_measure_omap_speed(int testSize) {
     omap->treeHandler->times[2].clear();
     omap->treeHandler->times[3].clear();
 
-    for (int j = 0; j < 10; j++) {
+    for (int i = 0; i < 100; i++) {
         total = 0;
 //        totalWrite = 0;
 //        totalRead = 0;
-        for (int i = 1; i <= 10; i++) {
-            uint32_t randval;
-            sgx_read_rand((unsigned char *) &randval, 4);
-            int num = (randval % (testSize)) + 1;
-            std::array< uint8_t, 16> id;
-            std::fill(id.begin(), id.end(), 0);
+        uint32_t randval;
+        sgx_read_rand((unsigned char *) &randval, 4);
+        int num = (randval % (testSize)) + 1;
+        printf("ORAM test for num=%d\n", num);
+        std::array< uint8_t, 16> id;
+        std::fill(id.begin(), id.end(), 0);
 
-            for (int j = 0; j < 4; j++) {
-                id[3 - j] = (byte_t) (num >> (j * 8));
-            }
-
-            string str = to_string(i);
-            std::array< uint8_t, 16> value;
-            std::fill(value.begin(), value.end(), 0);
-            std::copy(str.begin(), str.end(), value.begin());
-            ocall_start_timer(535);
-            ecall_write_node((const char*) id.data(), (const char*) value.data());
-            ocall_stop_timer(&time1, 535);
-//            printf("Write Time:%f\n", time1);
-            char* val = new char[16];
-            ocall_start_timer(535);
-            ecall_read_node((const char*) id.data(), val);
-            ocall_stop_timer(&time2, 535);
-
-            ocall_start_timer(535);
-            ecall_delete_node((const char*) id.data());
-            ocall_stop_timer(&time3, 535);
-//            printf("Read Time:%f\n", time2);
-            total += time1 + time2;
-            totalWrite += time1;
-            totalRead += time2;
-            totalDelete += time3;
-            //printf("expected value:%s result:%s\n",str.c_str(),string(val).c_str());
-            assert(string(val) == str);
-            delete[] val;
+        for (int k = 0; k < 4; k++) {
+            id[3 - k] = (byte_t) (num >> (k * 8));
         }
+
+        string str = to_string(i);
+        std::array< uint8_t, 16> value;
+        std::fill(value.begin(), value.end(), 0);
+        std::copy(str.begin(), str.end(), value.begin());
+
+        ocall_start_timer(535);
+        printf("Write key=%d\n", getValue(id));
+        ecall_write_node((const char*) id.data(), (const char*) value.data());
+        ocall_stop_timer(&time1, 535);
+
+//            printf("Write Time:%f\n", time1);
+        char* val = new char[16];
+        ocall_start_timer(535);
+        printf("Read key=%d\n", getValue(id));
+        ecall_read_node((const char*) id.data(), val);
+        ocall_stop_timer(&time2, 535);
+
+//            ecall_print_tree();
+        ocall_start_timer(535);
+        printf("Delete key=%d\n", getValue(id));
+        ecall_delete_node((const char*) id.data());
+        ocall_stop_timer(&time3, 535);
+
+        ocall_start_timer(535);
+        printf("Write key=%d\n", getValue(id));
+        ecall_write_node((const char*) id.data(), (const char*) value.data());
+        ocall_stop_timer(&time4, 535);
+//            ecall_print_tree();
+//            printf("Read Time:%f\n", time2);
+        total += time1 + time2 + time3 + time4;
+        totalWrite += (time1+time4);
+        totalRead += time2;
+        totalDelete += time3;
+        //printf("expected value:%s result:%s\n",str.c_str(),string(val).c_str());
+        assert(string(val) == str);
+        delete[] val;
 //        printf("Average OMAP Access Time: %f\n", total / 200);
 
     }
     printf("Average OMAP Read Time: %f\n", totalRead / 100);
-    printf("Average OMAP Write Time: %f\n", totalWrite / 100);
+    printf("Average OMAP Write Time: %f\n", totalWrite / 200);
     printf("Average OMAP Delete Time: %f\n", totalDelete / 100);
 
     vector<string> names;

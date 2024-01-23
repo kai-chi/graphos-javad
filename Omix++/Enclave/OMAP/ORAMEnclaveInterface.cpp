@@ -99,14 +99,15 @@ long long getValue(std::array< uint8_t, 16> id) {
 }
 
 double ecall_measure_omap_speed(int testSize) {
-    double time1, time2, time3, time4, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
+    double time1=0, time2=0, time3=0, time4=0, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
     ecall_setup_oram(testSize);
+    int warmup = 1000;
     printf("Warming UP DOMAP:\n");
-    for (int i = 0; i < 2000; i++) {
+    for (int i = 0; i < warmup; i++) {
         if (i % 100 == 0) {
-            printf("%d/%d\n",i,2000);
+            printf("%d/%d\n",i,warmup);
         }
-        total = 0;
+//        total = 0;
         uint32_t randval;
         sgx_read_rand((unsigned char *) &randval, 4);
         int num = (randval % (testSize)) + 1;
@@ -121,15 +122,15 @@ double ecall_measure_omap_speed(int testSize) {
         std::array< uint8_t, 16> value;
         std::fill(value.begin(), value.end(), 0);
         std::copy(str.begin(), str.end(), value.begin());
-        ocall_start_timer(535);
+//        ocall_start_timer(535);
         ecall_write_node((const char*) id.data(), (const char*) value.data());
-        ocall_stop_timer(&time1, 535);
+//        ocall_stop_timer(&time1, 535);
 
         char* val = new char[16];
-        ocall_start_timer(535);
+//        ocall_start_timer(535);
         ecall_read_node((const char*) id.data(), val);
-        ocall_stop_timer(&time2, 535);
-        total += time1 + time2;
+//        ocall_stop_timer(&time2, 535);
+//        total += time1 + time2;
         assert(string(val) == str);
         delete val;
     }
@@ -150,7 +151,9 @@ double ecall_measure_omap_speed(int testSize) {
         uint32_t randval;
         sgx_read_rand((unsigned char *) &randval, 4);
         int num = (randval % (testSize)) + 1;
+#if SGX_DEBUG
         printf("ORAM test %d/%d for num=%d\n", i, tests, num);
+#endif
         std::array< uint8_t, 16> id;
         std::fill(id.begin(), id.end(), 0);
 
@@ -163,28 +166,34 @@ double ecall_measure_omap_speed(int testSize) {
         std::fill(value.begin(), value.end(), 0);
         std::copy(str.begin(), str.end(), value.begin());
 
+#if SGX_DEBUG
+        printf("Write key=%lld\n", getValue(id));
+#endif
         ocall_start_timer(535);
-        printf("Write key=%d\n", getValue(id));
         ecall_write_node((const char*) id.data(), (const char*) value.data());
         ocall_stop_timer(&time1, 535);
 
 //            printf("Write Time:%f\n", time1);
         char* val = new char[16];
+#if SGX_DEBUG
+        printf("Read key=%lld\n", getValue(id));
+#endif
         ocall_start_timer(535);
-        printf("Read key=%d\n", getValue(id));
         ecall_read_node((const char*) id.data(), val);
         ocall_stop_timer(&time2, 535);
 
 //            ecall_print_tree();
+#if SGX_DEBUG
+        printf("Delete key=%lld\n", getValue(id));
+#endif
         ocall_start_timer(535);
-        printf("Delete key=%d\n", getValue(id));
         ecall_delete_node((const char*) id.data());
         ocall_stop_timer(&time3, 535);
 
-        ocall_start_timer(535);
-        printf("Write key=%d\n", getValue(id));
-        ecall_write_node((const char*) id.data(), (const char*) value.data());
-        ocall_stop_timer(&time4, 535);
+//        printf("Write key=%d\n", getValue(id));
+//        ocall_start_timer(535);
+//        ecall_write_node((const char*) id.data(), (const char*) value.data());
+//        ocall_stop_timer(&time4, 535);
 //            ecall_print_tree();
 //            printf("Read Time:%f\n", time2);
         total += time1 + time2 + time3 + time4;
@@ -198,7 +207,7 @@ double ecall_measure_omap_speed(int testSize) {
 
     }
     printf("Average OMAP Read Time: %f\n", totalRead / 100);
-    printf("Average OMAP Write Time: %f\n", totalWrite / 200);
+    printf("Average OMAP Write Time: %f\n", totalWrite / 100);
     printf("Average OMAP Delete Time: %f\n", totalDelete / 100);
 
     vector<string> names;

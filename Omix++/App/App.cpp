@@ -519,6 +519,8 @@ int SGX_CDECL main(int argc, char *argv[]) {
     if (argc == 3) {
         maxSize = stoi(argv[1]);
         test_case = stoi(argv[2]);
+    } else if (argc == 2) {
+        maxSize = stoi(argv[1]);
     }
     printf("maxSize = %d\n", maxSize);
 
@@ -651,7 +653,7 @@ int SGX_CDECL main(int argc, char *argv[]) {
             break;
     }
 
-    if (false) {
+    if (true) {
         ecall_measure_omap_speed(global_eid, &t, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;

@@ -1,5 +1,5 @@
-#ifndef ORAMENCLAVEINTERFACE_H
-#define ORAMENCLAVEINTERFACE_H
+#ifndef ORAMENCLAVEINTERFACE_CPP
+#define ORAMENCLAVEINTERFACE_CPP
 
 #include "../Enclave.h"
 #include "Enclave_t.h"
@@ -7,6 +7,18 @@
 #include <string>
 
 static OMAP* omap = NULL;
+
+void ecall_tree_preorder_keys(long long *keys, size_t len) {
+    if (omap != NULL) {
+        vector<long long> res = omap->treePreOrderKeys();
+        if (res.size() != len) {
+            printf("Error converting keys\n");
+        } else {
+            std::copy(res.begin(), res.end(), keys);
+        }
+    }
+}
+
 
 void ecall_print_tree() {
     if (omap != NULL) {
@@ -130,14 +142,15 @@ double ecall_measure_omap_speed(int testSize) {
     omap->treeHandler->times[2].clear();
     omap->treeHandler->times[3].clear();
 
-    for (int i = 0; i < 100; i++) {
+    int tests = 100;
+    for (int i = 0; i < tests; i++) {
         total = 0;
 //        totalWrite = 0;
 //        totalRead = 0;
         uint32_t randval;
         sgx_read_rand((unsigned char *) &randval, 4);
         int num = (randval % (testSize)) + 1;
-        printf("ORAM test for num=%d\n", num);
+        printf("ORAM test %d/%d for num=%d\n", i, tests, num);
         std::array< uint8_t, 16> id;
         std::fill(id.begin(), id.end(), 0);
 
@@ -308,5 +321,5 @@ double ecall_measure_omap_setup_speed(int testSize) {
     //    printf("Creating AVL time is:%f\n", omap->treeHandler->times[0][0]);
     //    printf("ORAM Setup:%f\n", omap->treeHandler->times[1][0]);
 }
-#endif /* ORAMENCLAVEINTERFACE_H */
+#endif /* ORAMENCLAVEINTERFACE_CPP */
 

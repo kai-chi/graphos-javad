@@ -14,6 +14,7 @@ enclave {
         public double ecall_measure_oram_setup_speed(int testSize);
         public double ecall_measure_omap_setup_speed(int testSize);
         public void ecall_print_tree();
+        public void ecall_tree_preorder_keys([out,count=len] long long *keys, size_t len);
     };
 
     untrusted {        

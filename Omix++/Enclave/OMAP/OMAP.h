@@ -26,6 +26,7 @@ public:
     string find(Bid key);
     void deleteNode(Bid key);
     void printTree();
+    vector<long long> treePreOrderKeys();
     void batchInsert(map<Bid, string> pairs);
     vector<string> batchSearch(vector<Bid> keys);
 };

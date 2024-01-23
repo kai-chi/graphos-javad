@@ -58,7 +58,7 @@ else
 endif
 
 App_Cpp_Files := App/App.cpp $(wildcard Common/*.cpp) $(wildcard App/OMAP/*.cpp) 
-App_Include_Paths := -IApp -Iservice_provider -ICommon -I$(SGX_SDK)/include
+App_Include_Paths := -IApp -ICommon -I$(SGX_SDK)/include
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 
@@ -75,7 +75,7 @@ else
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
-App_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -lsgx_usgxssld -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lcrypto -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR) 
+App_Link_Flags := -L$(OPENSSL_LIBRARY_PATH) -lsgx_usgxssld -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lcrypto -lpthread -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
 
 ifneq ($(SGX_MODE), HW)
 	App_Link_Flags += -lsgx_uae_service_sim
@@ -86,17 +86,6 @@ endif
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
 App_Name := app
-
-######## Service Provider Settings ########
-
-ServiceProvider_Cpp_Files := service_provider/ecp.cpp service_provider/network_ra.cpp service_provider/service_provider.cpp service_provider/ias_ra.cpp 
-ServiceProvider_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -Isample_libcrypto
-
-ServiceProvider_C_Flags := -fPIC -Wno-attributes -I$(SGX_SDK)/include -Isample_libcrypto
-ServiceProvider_Cpp_Flags := $(ServiceProvider_C_Flags)
-ServiceProvider_Link_Flags :=  -shared -L$(SGX_LIBRARY_PATH) -lsample_libcrypto -Lsample_libcrypto
-
-ServiceProvider_Cpp_Objects := $(ServiceProvider_Cpp_Files:.cpp=.o)
 
 ######## Enclave Settings ########
 
@@ -119,7 +108,7 @@ else
 endif
 Crypto_Library_Name := sgx_tcrypto
 
-Enclave_Cpp_Files := $(wildcard Enclave/OMAP/*.cpp) $(wildcard Enclave/*.cpp) $(wildcard Enclave/*.S)
+Enclave_Cpp_Files := $(wildcard Enclave/OMAP/*.cpp) $(wildcard Enclave/*.cpp)
 Enclave_Include_Paths := -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/include/libcxx -I$(SGX_SDK)/include/tlibc -I$(OPENSSL_PACKAGE)/include
 
 Enclave_C_Flags := $(Enclave_Include_Paths) -nostdinc -fvisibility=hidden -fpie -fstack-protector -ffunction-sections -fdata-sections $(Enclave_Include_Paths)
@@ -177,7 +166,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH)
 	@$(MAKE) target
 
 ifeq ($(Build_Mode), HW_RELEASE)
-target: libservice_provider.so $(App_Name) $(Enclave_Name)
+target: $(App_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
@@ -185,7 +174,7 @@ target: libservice_provider.so $(App_Name) $(Enclave_Name)
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-target: libservice_provider.so $(App_Name) $(Signed_Enclave_Name)
+target: $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -206,7 +195,7 @@ ifneq ($(Build_Mode), HW_RELEASE)
 endif
 
 .config_$(Build_Mode)_$(SGX_ARCH):
-	@rm -f .config_* $(App_Name) $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) isv_app/isv_enclave_u.* $(Enclave_Cpp_Objects) isv_enclave/isv_enclave_t.* libservice_provider.* $(ServiceProvider_Cpp_Objects)
+	@rm -f .config_* $(App_Name) $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) isv_app/isv_enclave_u.* $(Enclave_Cpp_Objects) isv_enclave/isv_enclave_t.*
 	@touch .config_$(Build_Mode)_$(SGX_ARCH)
 ######## App Objects ########
 
@@ -225,17 +214,6 @@ App/%.o: App/%.cpp App/Enclave_u.h
 
 $(App_Name): App/Enclave_u.o $(App_Cpp_Objects)
 	@$(CXX) $^ -o $@ $(App_Link_Flags)
-	@echo "LINK =>  $@"
-
-######## Service Provider Objects ########
-
-
-service_provider/%.o: service_provider/%.cpp
-	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(ServiceProvider_Cpp_Flags) -c $< -o $@
-	@echo "CXX  <=  $<"
-
-libservice_provider.so: $(ServiceProvider_Cpp_Objects)
-	@$(CXX) $^ -o $@ $(ServiceProvider_Link_Flags)
 	@echo "LINK =>  $@"
 
 ######## Enclave Objects ########
@@ -268,4 +246,4 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 .PHONY: clean
 
 clean:
-	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.* libservice_provider.* $(ServiceProvider_Cpp_Objects)
+	@rm -f .config_* $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) App/Enclave_u.* $(Enclave_Cpp_Objects) Enclave/Enclave_t.*

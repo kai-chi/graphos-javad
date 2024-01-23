@@ -10,10 +10,11 @@
 #include <stdexcept>
 #include "sgx_trts.h"
 #include "ObliviousOperations.h"
-#include "ORAMEnclaveInterface.h"
+//#include "ORAMEnclaveInterface.cpp"
 #include "Enclave_t.h"  /* print_string */
 #include <algorithm>
 #include <stdlib.h>
+#include "../Enclave.h"
 
 ORAM::ORAM(long long maxSize, bytes<Key> oram_key, bool simulation, bool isEmptyMap)
 : key(oram_key) {

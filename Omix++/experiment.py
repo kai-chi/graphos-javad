@@ -66,7 +66,7 @@ def plot(sizes):
                'Insert Time(milliseconds)', 'Delete Time(milliseconds)']
     dataV1 = data[data['sgx'] == 'sgxv1']
     for i in range(len(plots)):
-        plt.subplot(2, 3, i+1)
+        plt.subplot(2, 4, i+1)
         for algorithm in platforms:
             df = data[data['sgx'] == algorithm]
             omap_sizes = df['size']
@@ -83,7 +83,7 @@ def plot(sizes):
         plt.legend()
 
     for i in range(len(plots)):
-        plt.subplot(2, 3, i+1+3)
+        plt.subplot(2, 4, i+1+4)
         for algorithm in ['sgxv2', 'sgxv2-epc']:
             df = data[data['sgx'] == algorithm]
             omap_sizes = df['size'].values
@@ -109,14 +109,14 @@ if __name__ == '__main__':
 
     sizes = 256 * 2 ** np.arange(20)
     experimentFlag = 0
-    compileFlag = 0
+    compileFlag = 1
     plotFlag = 1
     repetitions = 1
 
     if experimentFlag:
         if compileFlag:
             commons.remove_file(res_file)
-            commons.init_file(res_file, "size,initTime,readTime,writeTime\n")
+            commons.init_file(res_file, "size,initTime,readTime,writeTime,deleteTime\n")
             commons.compile_app()
         for size in sizes:
             run(size, repetitions)

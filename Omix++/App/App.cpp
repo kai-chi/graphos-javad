@@ -14,7 +14,6 @@ using namespace std;
 #define MAX_PATH FILENAME_MAX
 
 #include "sgx_urts.h"
-#include "sgx_uae_service.h"
 #include "App.h"
 #include "Enclave_u.h"
 #include "OMAP/RAMStoreEnclaveInterface.h"
@@ -51,17 +50,6 @@ using namespace std;
  *
  */
 
-// This sample is confined to the communication between a SGX client platform
-// and an ISV Application Server. 
-
-
-#include <chrono>
-#include <stdio.h>
-#include <limits.h>
-#include <unistd.h>
-// Needed for definition of remote attestation messages.
-#include "remote_attestation_result.h"
-
 #include "Enclave_u.h"
 
 
@@ -72,8 +60,6 @@ using namespace std;
 // In addition to generating and sending messages, this application
 // can use pre-generated messages to verify the generation of
 // messages and the information flow.
-#include "sample_messages.h"
-
 
 #define ENCLAVE_PATH "isv_enclave.signed.so"
 
@@ -523,76 +509,149 @@ int SGX_CDECL main(int argc, char *argv[]) {
         printf("Enter a character before exit ...\n");
         getchar();
         return -1;
+    } else {
+        printf("Enclave id = %d\n", global_eid);
     }
-
-
-    // delete leaf 48 and get left-left case
-//    int ids[] = {32, 16, 48, 8, 24};
-//    int id = 48;
-
-    // delete leaf 16 and get right-right case
-//    int ids[] = {32, 16, 48, 40, 56};
-//    int id = 16;
-
-    // delete leaf 56 and get left-right case
-//    int ids[] = {32, 16, 48, 8, 24, 56, 20};
-//    int id = 56;
-
-    // delete leaf 8 and get right-left case
-//    int ids[] = {32, 16, 48, 8, 40, 56, 36};
-//    int id = 8;
-
-    // delete leaf 19 and get worst-case rebalancing
-//    int ids[] = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
-//    int id = 19;
-
-    // delete 48 with only right child and get no balancing
-//    int ids[] = {32, 16, 48, 8, 24, 56};
-//    int id = 48;
-
-    // delete 48 with only left child and get no balancing
-//    int ids[] = {32, 16, 48, 8, 24, 40};
-//    int id = 48;
-
-    // delete 20 with only left child and get worst-case rebalancing
-//    int ids[] = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
-//    int id = 20;
-
-    // delete 16 with two children and get no rebalancing
-//    int ids[] = {32,16,48,8,24};
-//    int id = 16;
-
-    // delete 18 with two children and get worst-case rebalancing
-//    int ids[] = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
-//    int id = 18;
-
-    // delete root with no children
-//    int ids[] = {16};
-//    int id = 16;
-
-    // delete root with one left child
-//    int ids[] = {16, 8};
-//    int id = 16;
-
-    // delete root with one right child
-//    int ids[] = {16, 24};
-//    int id = 16;
-
-    // delete root with two children
-//    int ids[] = {16, 8, 24};
-//    int id = 16;
-
-    // some difficult tree
-    int ids[] = {9,4,12,2,6,10,13,1,3,5,7,11,8};
-    int id = 13;
 
     /* My Codes */
     int maxSize = 32;
-    if (argc == 2) {
+    int test_case = 6;
+    if (argc == 3) {
         maxSize = stoi(argv[1]);
+        test_case = stoi(argv[2]);
     }
     printf("maxSize = %d\n", maxSize);
-    if (true) {
+
+
+    vector<int> ids;
+    vector<long long> preorder_after_deletion;
+    int id;
+    switch(test_case) {
+        case 0:
+            // delete leaf and get no rebalancing
+            ids = {2,1,3};
+            id = 3;
+            preorder_after_deletion = {2,1};
+            break;
+        case 1:
+            // delete leaf 5 and get left-left case
+            ids = {4,2,5,1,3};
+            id = 5;
+            preorder_after_deletion = {2,1,4,3};
+            break;
+        case 2:
+            // delete leaf 1 and get right-right case
+            ids = {2,1,3,4,5};
+            id = 1;
+            preorder_after_deletion = {4,2,3,5};
+            break;
+        case 3:
+            // delete leaf 7 and get left-right case
+            ids = {5,2,6,1,4,7,3};
+            id = 7;
+            preorder_after_deletion = {4,2,1,3,5,6};
+            break;
+        case 4:
+            // delete leaf 1 and get right-left case
+            ids = {3,2,6,1,5,7,4};
+            id = 1;
+            preorder_after_deletion = {5,3,2,4,6,7};
+            break;
+        case 5:
+            // delete leaf 19 and get worst-case rebalancing
+            ids = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
+            id = 19;
+            preorder_after_deletion = {8,5,3,2,1,4,7,6,13,11,10,9,12,16,15,14,18,17,20};
+            break;
+        case 6:
+            // delete 5 with only right child and get no balancing
+            ids = {4,2,5,1,3,6};
+            id = 5;
+            preorder_after_deletion = {4,2,1,3,6};
+            break;
+        case 7:
+            // delete 6 with only left child and get no balancing
+            ids = {4,2,6,1,3,5};
+            id = 6;
+            preorder_after_deletion = {4,2,1,3,5};
+            break;
+        case 8:
+            // delete 20 with only left child and get worst-case rebalancing
+            ids = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
+            id = 20;
+            preorder_after_deletion = {8,5,3,2,1,4,7,6,13,11,10,9,12,16,15,14,18,17,19};
+            break;
+        case 9:
+            // delete 2 with two children and get no rebalancing
+            ids = {4,2,5,1,3};
+            id = 2;
+            preorder_after_deletion = {4,3,1,5};
+            break;
+        case 10:
+            // delete root with no children
+            ids = {1};
+            id = 1;
+            preorder_after_deletion = {};
+            break;
+        case 11:
+            // delete root with one left child
+            ids = {2, 1};
+            id = 2;
+            preorder_after_deletion = {1};
+            break;
+        case 12:
+            // delete root with one right child
+            ids = {1, 2};
+            id = 1;
+            preorder_after_deletion = {2};
+            break;
+        case 13:
+            // delete root with two children
+            ids = {2, 1, 3};
+            id = 2;
+            preorder_after_deletion = {3,1};
+            break;
+        case 14:
+            // delete 4 (root) with two children and get left-left case
+            ids = {4,2,5,1,3};
+            id = 4;
+            preorder_after_deletion = {2,1,5,3};
+            break;
+        case 15:
+            // delete 10 with two children and get left-left case
+            ids = {8,5,10,3,6,9,12,2,4,7,11,1};
+            id = 10;
+            preorder_after_deletion = {5,3,2,1,4,8,6,7,11,9,12};
+            break;
+        case 16:
+            // delete 10 with two children and get left-left case and another delete
+            ids = {8,5,10,3,6,9,12,2,4,7,13,1};
+            id = 10;
+            preorder_after_deletion = {5,3,2,1,4,8,6,7,12,9,13};
+            break;
+        case 17:
+            // delete 3 with two children and get double rotation
+            ids = {5,3,8,1,4,7,10,2,6,9,11,12};
+            id = 3;
+            preorder_after_deletion = {8,5,2,1,4,7,6,10,9,11,12};
+            break;
+        case 18:
+            // delete 18 with two children and get worst-case rebalancing
+            ids = {13,8,18,5,11,16,20,3,7,10,12,15,17,19,2,4,6,9,14,1};
+            id = 18;
+            preorder_after_deletion = {8,5,3,2,1,4,7,6,13,11,10,9,12,16,15,14,19,17,20};
+            break;
+        case 19:
+            // some difficult tree
+            ids = {9,4,12,2,6,10,13,1,3,5,7,11,8};
+            id = 13;
+            preorder_after_deletion = {6,4,2,1,3,5,9,7,8,11,10,12};
+            break;
+        default:
+            break;
+    }
+
+    if (false) {
         ecall_measure_omap_speed(global_eid, &t, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
@@ -617,7 +676,7 @@ int SGX_CDECL main(int argc, char *argv[]) {
     unsigned long long storeBlockSize;
 
 //    int ids[] = {32, 16, 48, 40};
-    int ids_length = sizeof(ids) / sizeof(int);
+    int ids_length = ids.size();
 
 //    for (int i = 0; i < ids_length; i++) {
 //        Bid k = ids[i];
@@ -654,10 +713,17 @@ int SGX_CDECL main(int argc, char *argv[]) {
     ecall_read_node(global_eid, (const char*) k.id.data(), val);
     cout <<"Read " << id << ": " << val << endl;
 
-//    id = 32;
-//    k = id;
-//    ecall_read_node(global_eid, (const char*) k.id.data(), val);
-//    cout <<"Read " << id << ": " << val << endl;
+    long long *keys = new long long[ids_length-1];
+    ecall_tree_preorder_keys(global_eid, keys, ids_length-1);
+    cout<<"********************"<<endl;
+    cout << "Preorder keys: ";
+    for (int i = 0; i < ids_length - 1; i++) {
+        cout << keys[i] << ", ";
+    }
+    cout << endl;
+    for (int i = 0; i < ids_length - 1; i++) {
+        assert(keys[i] == preorder_after_deletion[i]);
+    }
 
     //******************************************************************************
     //******************************************************************************
@@ -674,7 +740,8 @@ int SGX_CDECL main(int argc, char *argv[]) {
     //------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------
     sgx_destroy_enclave(global_eid);
-
+    delete val;
+    delete keys;
 
 
 

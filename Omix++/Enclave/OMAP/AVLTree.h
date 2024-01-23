@@ -85,8 +85,8 @@ private:
     void compare_and_swap(Node* item_i, Node* item_j, int dir);
     void bitonicSort(vector<Node*>* nodes);
     int greatest_power_of_two_less_than(int n);
-    int getBalance(Bid rootKey, unsigned long long& rootPos);
-    Node* minValueNode(Bid rootKey, unsigned long long& rootPos);
+    int getBalance(Bid rootKey, unsigned long long& rootPos, bool isDummyOp);
+    Node* minValueNode(Bid rootKey, unsigned long long& rootPos, bool isDummyOp);
     
 public:
     AVLTree(long long maxSize, bytes<Key> secretkey, Bid& rootKey, unsigned long long& rootPos, map<Bid, string>* pairs, map<unsigned long long, unsigned long long>* permutation);
@@ -104,12 +104,16 @@ public:
     //    Node* search(Node* head, Bid key, int newPos = -1);
     string search(Node* head, Bid key);
     // parentRootRelation = -1 if parentKey->leftChild = rootKey, parentRootRelation=0 if parentKey = rootKey, parentRootRelation=1 if parentKey->rightChild = rootKey
-    Bid deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, bool isDummyDel);
+    // version 2 - pad to 1.44*logN accesses
+    Bid deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel);
+    // version 3 is the most basic delete possible
+    Bid deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel);
     void batchSearch(Node* head, vector<Bid> keys, vector<Node*>* results);
     void printTree(Node* root, int indent);
     void startOperation(bool batchWrite = false);
     void setupInsert(Bid& rootKey, int& rootPos, map<Bid, string>& pairs);
     void finishOperation();
+    void preOrderKeys(Node *root, vector<long long> &res);
 };
 
 #endif /* AVLTREE_H */

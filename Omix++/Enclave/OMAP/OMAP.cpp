@@ -64,9 +64,9 @@ void OMAP::deleteNode(Bid omapKey) {
     int children = -1;
     unsigned long long parentPos = rootPos;
     if (rootKey == 0) {
-        rootKey = treeHandler->deleteNode2(0, rootPos, rootKey, parentPos, 0, omapKey, height, 0, children, depth, false);
+        rootKey = treeHandler->deleteNode2(0, rootPos, rootKey, parentPos, 0, omapKey, height, 0, children, depth, true, false);
     } else {
-        rootKey = treeHandler->deleteNode2(rootKey, rootPos, rootKey, parentPos, 0, omapKey, height, 0, children, depth, false);
+        rootKey = treeHandler->deleteNode2(rootKey, rootPos, rootKey, parentPos, 0, omapKey, height, 0, children, depth, true, false);
     }
 //    if (treeHandler->logTime) {
 //        ocall_stop_timer(&y, 944);

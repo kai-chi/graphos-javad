@@ -863,7 +863,7 @@ Node * AVLTree::minValueNode(Bid rootKey, unsigned long long& rootPos, bool isDu
     return n;
 }
 
-Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel) {
+Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isFirstDel, bool isDummyDel) {
     depth++;
     bool remainderIsDummy = false;
     Bid dummy;
@@ -876,6 +876,9 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     bool rightNodeIsNull = true;
     Node* tmpDummyNode = new Node();
     tmpDummyNode->isDummy = true;
+    int height2=0;
+    int depth2=0;
+    int children2=-1;
 
 
     Node *node = nullptr;
@@ -888,7 +891,6 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     Bid retKey = rootKey;
 
     if (isDummyDel && !CTeq(CTcmp(depth, (int) ((float) oram->depth * 1.44)), -1)) {
-        // TODO: write the final condition
 #if SGX_DEBUG
         printf("Deleting key=%d...\n", key.getValue());
 #endif
@@ -938,8 +940,11 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 rootKey = 0;
                 rootPos = -1;
                 retKey = rootKey;
-                // TODO: what is this line doing here?
-//                oram->ReadWrite(node->key, node, node->pos, node->pos, false, false, false);
+
+                // here trying out constant-time
+                if (isFirstDel) {
+                    deleteNode2(dummy, tmpDummyNode->pos, dummy, tmpDummyNode->pos, 0, dummy, height2, dummy, children2, depth2, false, true);
+                }
             } else {
                 // one child case
 
@@ -984,6 +989,11 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 retKey = childBid;
                 lastID = 0;
                 node = oram->ReadWrite(childBid, tmpDummyNode, childPos, childPos, true, false, true);
+
+                // here trying out constant-time
+                if (isFirstDel) {
+                    deleteNode2(dummy, tmpDummyNode->pos, dummy, tmpDummyNode->pos, 0, dummy, height2, dummy, children2, depth2, false, true);
+                }
             }
         } else {
             // node with two children
@@ -1020,10 +1030,8 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
             node->key.setValue(successor->key.getValue());
             node->pos = successor->pos;
             node->setValue(successor->value);
-            int height2=0;
-            int depth2=0;
-            int children2=-1;
-            node->rightID = deleteNode2(node->rightID, node->rightPos, node->key, node->pos, 1, successor->key, height2, 0, children2, depth2, false);
+
+            node->rightID = deleteNode2(node->rightID, node->rightPos, node->key, node->pos, 1, successor->key, height2, 0, children2, depth2, false, false);
             if (!node->leftID.isZero()) {
                 leftNode = oram->ReadWrite(node->leftID, tmpDummyNode, node->leftPos, node->leftPos, true, false, false);
                 readWriteCacheNode(node->leftID, leftNode, false, false);
@@ -1064,14 +1072,14 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 
     if (!remainderIsDummy) {
         if (key < node->key) {
-            node->leftID = deleteNode2(node->leftID, node->leftPos, node->key, node->pos, -1, key, height, dummy, children, depth, false);
+            node->leftID = deleteNode2(node->leftID, node->leftPos, node->key, node->pos, -1, key, height, dummy, children, depth, isFirstDel, false);
             depth--;
         } else if (key > node->key) {
-            node->rightID = deleteNode2(node->rightID, node->rightPos, node->key, node->pos, 1, key, height, dummy, children, depth, false);
+            node->rightID = deleteNode2(node->rightID, node->rightPos, node->key, node->pos, 1, key, height, dummy, children, depth, isFirstDel, false);
             depth--;
         } else {
             exist = true;
-            Bid resValBid = deleteNode2(rootKey, rootPos, parentKey, parentPos, parentRootRelation, key, height, node->key, children, depth, true);
+            Bid resValBid = deleteNode2(rootKey, rootPos, parentKey, parentPos, parentRootRelation, key, height, node->key, children, depth, isFirstDel, true);
             depth--;
 #if SGX_DEBUG
             printf("Returning after child case: %d, current node=%d\n", children, node->key.getValue());
@@ -1104,7 +1112,7 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
             }
         }
     } else {
-        Bid resValBid = deleteNode2(rootKey, rootPos, parentKey, parentPos, parentRootRelation, key, height, node->key, children, depth, true);
+        Bid resValBid = deleteNode2(rootKey, rootPos, parentKey, parentPos, parentRootRelation, key, height, node->key, children, depth, isFirstDel, true);
         depth--;
         retKey = resValBid;
         remainderIsDummy = remainderIsDummy;
@@ -1430,7 +1438,7 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 }
 
 
-Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel) {
+Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isFirstDel, bool isDummyDel) {
 #if SGX_DEBUG
     printf("DeleteNode3 rootKey=%d, rootPos=%lld, parentKey=%d, parentPos=%lld, parentRootRelation=%d, key=%d, height=%d, isDummyDel=%d\n",
            rootKey.getValue(), rootPos, parentKey.getValue(), parentPos, parentRootRelation, key.getValue(), height, isDummyDel);
@@ -1448,10 +1456,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     Node *node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, true); //READ
 
     if (key < node->key)
-        node->leftID = deleteNode3(node->leftID, node->leftPos, node->key, node->pos, -1, key, height, dummy, children, depth, false);
+        node->leftID = deleteNode3(node->leftID, node->leftPos, node->key, node->pos, -1, key, height, dummy, children, depth, isFirstDel, false);
 
     else if (key > node->key)
-        node->rightID = deleteNode3(node->rightID, node->rightPos, node->key, node->pos, 1, key, height, dummy, children, depth, false);
+        node->rightID = deleteNode3(node->rightID, node->rightPos, node->key, node->pos, 1, key, height, dummy, children, depth, isFirstDel, false);
 
     else {
 #if SGX_DEBUG
@@ -1577,7 +1585,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
             node->pos = successor->pos;
             node->setValue(successor->value);
             int height2;
-            node->rightID = deleteNode3(node->rightID, node->rightPos, node->key, node->pos, 1, successor->key, height2, dummy, children, depth, false);
+            node->rightID = deleteNode3(node->rightID, node->rightPos, node->key, node->pos, 1, successor->key, height2, dummy, children, depth, isFirstDel, false);
         }
     }
 

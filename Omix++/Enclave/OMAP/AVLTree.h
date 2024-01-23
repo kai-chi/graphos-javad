@@ -105,9 +105,9 @@ public:
     string search(Node* head, Bid key);
     // parentRootRelation = -1 if parentKey->leftChild = rootKey, parentRootRelation=0 if parentKey = rootKey, parentRootRelation=1 if parentKey->rightChild = rootKey
     // version 2 - pad to 1.44*logN accesses
-    Bid deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel);
+    Bid deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isFirstDel, bool isDummyDel);
     // version 3 is the most basic delete possible
-    Bid deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isDummyDel);
+    Bid deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey, unsigned long long &parentPos, int parentRootRelation, Bid key, int &height, Bid lastID, int &children, int &depth, bool isFirstDel, bool isDummyDel);
     void batchSearch(Node* head, vector<Bid> keys, vector<Node*>* results);
     void printTree(Node* root, int indent);
     void startOperation(bool batchWrite = false);

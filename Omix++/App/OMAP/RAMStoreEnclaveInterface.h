@@ -4,6 +4,45 @@
 #include "Utilities.h"
 
 static RAMStore* store = NULL;
+RAMStore* heapStore = NULL;
+
+void ocall_setup_heapStore(size_t num, int size) {
+    if (heapStore == NULL) {
+        heapStore = new RAMStore(num, num, false);
+    }
+}
+
+void ocall_nwrite_heapStore(size_t blockCount, long long* indexes, const char *blk, size_t len) {
+    assert(len % blockCount == 0);
+    size_t eachSize = len / blockCount;
+    for (unsigned int i = 0; i < blockCount; i++) {
+        block ciphertext(blk + (i * eachSize), blk + (i + 1) * eachSize);
+        heapStore->Write(indexes[i], ciphertext);
+    }
+}
+
+size_t ocall_nread_heapStore(size_t blockCount, long long* indexes, char *blk, size_t len) {
+    assert(len % blockCount == 0);
+    size_t resLen = -1;
+    for (unsigned int i = 0; i < blockCount; i++) {
+        block ciphertext = heapStore->Read(indexes[i]);
+        resLen = ciphertext.size();
+        std::memcpy(blk + i * resLen, ciphertext.data(), ciphertext.size());
+    }
+    return resLen;
+}
+
+void ocall_initialize_heapStore(long long begin, long long end, const char *blk, size_t len) {
+    block ciphertext(blk, blk + len);
+    for (long long i = begin; i < end; i++) {
+        heapStore->Write(i, ciphertext);
+    }
+}
+
+void ocall_write_heapStore(long long index, const char *blk, size_t len) {
+    block ciphertext(blk, blk + len);
+    heapStore->Write(index, ciphertext);
+}
 
 void ocall_setup_ramStore(size_t num, int size) {
     if (store == NULL) {

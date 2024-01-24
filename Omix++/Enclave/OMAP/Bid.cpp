@@ -98,4 +98,8 @@ void Bid::setToZero() {
     std::fill(id.begin(), id.end(), 0);
 }
 
-
+void Bid::setInfinity() {
+    for (int i = 0; i < ID_SIZE; i++) {
+        id[i] = 255;
+    }
+}

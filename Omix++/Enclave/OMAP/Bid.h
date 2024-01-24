@@ -112,6 +112,17 @@ public:
         return res;
     }
 
+    static int CTcmp(std::array< byte_t, 16> lhs, std::array< byte_t, 16> rhs) {
+        int res = 0;
+        bool found = false;
+        for (int i = 16 - 1; i >= 0; i--) {
+            int cmpRes = CTcmp(lhs[i], rhs[i]);
+            res = conditional_select(cmpRes, res, !found);
+            found = conditional_select(true, found, !CTeq(cmpRes, 0) && !found);
+        }
+        return res;
+    }
+
     /**
      * constant time selector
      * @param a
@@ -144,6 +155,7 @@ public:
     void setToZero();
     bool isZero();
     void setValue(long long value);
+    void setInfinity();
 };
 
 

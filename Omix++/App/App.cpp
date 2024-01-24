@@ -9,6 +9,7 @@
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
+#include <algorithm>
 
 using namespace std;
 #define MAX_PATH FILENAME_MAX
@@ -653,13 +654,32 @@ int SGX_CDECL main(int argc, char *argv[]) {
             break;
     }
 
-    if (true) {
+    if (false) {
         ecall_measure_omap_speed(global_eid, &t, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
     }
 //    ecall_measure_omap_setup_speed(global_eid, &t, maxSize);
 
+    // DOHEAP TEST
+    if (false) {
+        ecall_setup_oheap(global_eid, maxSize);
+        for (int i : ids) {
+            int k = i;
+            int v = i;
+            ecall_execute_heap_operation(global_eid, &k, &v, 2);
+        }
+        std::sort(ids.begin(), ids.end());
+        for (int i : ids) {
+            int k = -1;
+            int v = -1;
+            ecall_execute_heap_operation(global_eid, &k, &v, 1);
+            assert(i == k);
+            assert(i == v);
+        }
+        sgx_destroy_enclave(global_eid);
+        return 0;
+    }
 
 
     //******************************************************************************

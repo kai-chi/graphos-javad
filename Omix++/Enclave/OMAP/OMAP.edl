@@ -15,6 +15,12 @@ enclave {
         public double ecall_measure_omap_setup_speed(int testSize);
         public void ecall_print_tree();
         public void ecall_tree_preorder_keys([out,count=len] long long *keys, size_t len);
+
+        public void ecall_setup_oheap(int maxSize);
+        public void ecall_dummy_heap_op();
+        public void ecall_set_new_minheap_node(int newMinHeapNodeV, int newMinHeapNodeDist);
+        public void ecall_extract_min_id([in,out,count=1]int* id, [in,out,count=1]int* dist);
+        public void ecall_execute_heap_operation([in,out,count=1]int* id, [in,out,count=1]int* dist,int op);
     };
 
     untrusted {        
@@ -23,5 +29,12 @@ enclave {
         void ocall_nwrite_ramStore(size_t blockCount,[in,count=blockCount]long long* indexes, [in, count=len] const char *blk,size_t len);
         void ocall_initialize_ramStore(long long begin,long long end, [in, count=len] const char *block,size_t len);
         void ocall_write_ramStore(long long pos, [in, count=len] const char *block,size_t len);
+
+        void ocall_setup_heapStore(size_t num, int size);
+        size_t ocall_nread_heapStore(size_t blockCount,[in,count=blockCount]long long* indexes, [in,out,count=len] char *blk,size_t len);
+        void ocall_nwrite_heapStore(size_t blockCount,[in,count=blockCount]long long* indexes, [in, count=len] const char *blk,size_t len);
+        void ocall_initialize_heapStore(long long begin,long long end, [in, count=len] const char *block,size_t len);
+        void ocall_write_heapStore(long long pos, [in, count=len] const char *block,size_t len);
+
     };
 };

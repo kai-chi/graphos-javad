@@ -5,8 +5,51 @@
 #include "Enclave_t.h"
 #include "OMAP.h"
 #include <string>
+#include "DOHEAP.hpp"
 
 static OMAP* omap = NULL;
+static DOHEAP* oheap = NULL;
+
+void ecall_setup_oheap(int maxSize) {
+    bytes<Key> tmpkey{0};
+    oheap = new DOHEAP(maxSize, tmpkey, false);
+    //        oheap = new OHeap(omap, maxSize);
+}
+
+void ecall_set_new_minheap_node(int newMinHeapNodeV, int newMinHeapNodeDist) {
+    //    oheap->setNewMinHeapNode(newMinHeapNodeV, newMinHeapNodeDist);
+    Bid id = newMinHeapNodeDist;
+    array<byte_t, 16> value;
+    std::fill(value.begin(), value.end(), 0);
+    for (int i = 0; i < 4; i++) {
+        value[i] = (byte_t) (newMinHeapNodeV >> (i * 8));
+    }
+    oheap->execute(id, value, 2);
+}
+
+void ecall_execute_heap_operation(int* v, int* dist, int op) {
+    //        oheap->execute(*v, *dist, op);
+    int d = *dist;
+    Bid id = d;
+    int val = *v;
+    array<byte_t, 16> value;
+    std::fill(value.begin(), value.end(), 0);
+    for (int i = 0; i < 4; i++) {
+        value[i] = (byte_t) (val >> (i * 8));
+    }
+    pair<Bid, array<byte_t, 16> > res = oheap->execute(id, value, op);
+    int rr = res.first.getValue();
+    *dist = rr;
+    std::memcpy(v, res.second.data(), sizeof (int));
+}
+
+void ecall_dummy_heap_op() {
+    //    oheap->dummyOperation();
+}
+
+void ecall_extract_min_id(int* id, int* dist) {
+    //    oheap->extractMinID(*id, *dist);
+}
 
 void ecall_tree_preorder_keys(long long *keys, size_t len) {
     if (omap != NULL) {

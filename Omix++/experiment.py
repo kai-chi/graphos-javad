@@ -80,6 +80,8 @@ def plot(sizes):
         plt.gca().set_xscale('log',basex=2)
         plt.yscale('log')
         plt.xticks(sizes[0::2])
+        if i > 0:
+            plt.ylim([2, 300])
         plt.legend()
 
     for i in range(len(plots)):
@@ -109,7 +111,7 @@ if __name__ == '__main__':
 
     sizes = 256 * 2 ** np.arange(20)
     experimentFlag = 0
-    compileFlag = 1
+    compileFlag = 0
     plotFlag = 1
     repetitions = 1
 

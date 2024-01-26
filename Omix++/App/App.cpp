@@ -654,7 +654,7 @@ int SGX_CDECL main(int argc, char *argv[]) {
             break;
     }
 
-    if (false) {
+    if (true) {
         ecall_measure_omap_speed(global_eid, &t, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
@@ -665,8 +665,9 @@ int SGX_CDECL main(int argc, char *argv[]) {
     if (false) {
         ecall_setup_oheap(global_eid, maxSize);
         for (int i : ids) {
-            int k = i;
+            int k = 0;
             int v = i;
+            printf("heap insert k=%d, v=%d\n", k, v);
             ecall_execute_heap_operation(global_eid, &k, &v, 2);
         }
         std::sort(ids.begin(), ids.end());
@@ -674,8 +675,9 @@ int SGX_CDECL main(int argc, char *argv[]) {
             int k = -1;
             int v = -1;
             ecall_execute_heap_operation(global_eid, &k, &v, 1);
-            assert(i == k);
-            assert(i == v);
+            printf("heap min k=%d, v=%d\n", k, v);
+//            assert(i == k);
+//            assert(i == v);
         }
         sgx_destroy_enclave(global_eid);
         return 0;

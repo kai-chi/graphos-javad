@@ -16,7 +16,8 @@ set(E_SRCS Enclave/Enclave.cpp)
 set(T_SRCS Enclave/OMAP/AES.cpp Enclave/OMAP/AVLTree.cpp
         Enclave/OMAP/Bid.cpp Enclave/OMAP/LocalRAMStore.cpp
         Enclave/OMAP/ObliviousOperations.cpp Enclave/OMAP/OMAP.cpp
-        Enclave/OMAP/ORAM.cpp Enclave/OMAP/ORAMEnclaveInterface.cpp)
+        Enclave/OMAP/ORAM.cpp Enclave/OMAP/ORAMEnclaveInterface.cpp
+        Enclave/OMAP/DOHEAP.cpp Enclave/OMAP/HeapObliviousOperations.cpp)
 set(LDS Enclave/Enclave.lds)
 
 add_trusted_library(omap_lib
@@ -39,7 +40,8 @@ enclave_sign(enclave
         CONFIG Enclave/Enclave.config.xml)
 
 set(SRCS App/App.cpp App/OMAP/AES.cpp App/OMAP/Bid.cpp
-        App/OMAP/Node.cpp App/OMAP/RAMStore.cpp App/OMAP/Utilities.cpp)
+        App/OMAP/Node.cpp App/OMAP/RAMStore.cpp App/OMAP/Utilities.cpp
+        App/AVL.cpp)
 
 add_untrusted_executable(app
         SRCS ${SRCS}

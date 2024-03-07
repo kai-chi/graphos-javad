@@ -311,10 +311,12 @@ void ORAM::FetchPath(long long leaf) {
 
 Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, bool isIncRead) {
     if (!isRead) {
+#ifdef SGX_DEBUG
         printf("ORAM WRITE (isDummy==node: %d): bid: %d, key: %d, pos: %d, newPos: %d, isDummy: %d, leftID/pos: %d/%d, rightID/pos: %d/%d\n",
                isDummy==inputnode->isDummy, bid.getValue(), inputnode->key.getValue(),
                lastLeaf, newLeaf, inputnode->isDummy, inputnode->leftID.getValue(), inputnode->leftPos,
                inputnode->rightID.getValue(), inputnode->rightPos);
+#endif
     }
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);
@@ -498,8 +500,10 @@ Node* ORAM::ReadWriteTest(Bid bid, Node* inputnode, unsigned long long lastLeaf,
 }
 
 Node* ORAM::ReadWrite(Bid bid, unsigned long long lastLeaf, unsigned long long newLeaf, bool isDummy, unsigned long long newChildPos, Bid targetNode) {
+#ifdef SGX_DEBUG
     printf("ORAM WRITE 2: bid: %d, isDummy: %d, targetNode: %d\n",
            bid.getValue(), isDummy, targetNode.getValue());
+#endif
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);
         throw runtime_error("Node id is not set");
@@ -569,8 +573,10 @@ Node* ORAM::ReadWrite(Bid bid, unsigned long long lastLeaf, unsigned long long n
 
 Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, std::array< byte_t, 16> value, bool overwrite, bool isIncRead) {
     if (!isRead) {
+#ifdef SGX_DEBUG
         printf("ORAM WRITE 3 (isDummy==node: %d): bid: %d, key: %d, isDummy: %d, leftID: %d, rightID: %d\n",
                isDummy==inputnode->isDummy, bid.getValue(), inputnode->key.getValue(), inputnode->isDummy, inputnode->leftID.getValue(), inputnode->rightID.getValue());
+#endif
     }
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);

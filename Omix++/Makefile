@@ -4,6 +4,7 @@ SGX_SDK ?= /opt/intel/sgxsdk
 SGX_MODE ?= HW
 SGX_ARCH ?= x64
 SGX_DEBUG ?= 1
+SGX_PRERELEASE ?= 0
 
 ifeq ($(shell getconf LONG_BIT), 32)
 	SGX_ARCH := x86
@@ -33,6 +34,7 @@ ifeq ($(SGX_DEBUG), 1)
         SGX_COMMON_FLAGS += -O0 -g -DSGX_DEBUG
 else
         SGX_COMMON_FLAGS += -O3
+        SGX_PRERELEASE = 1
 endif
 
 ifeq ($(SUPPLIED_KEY_DERIVATION), 1)

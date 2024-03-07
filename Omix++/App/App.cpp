@@ -701,7 +701,31 @@ int SGX_CDECL main(int argc, char *argv[]) {
 //    srand (time(NULL));
     srand (12345);
 
-    while(true) {
+    for (int i = 0; i < ids_length; i++) {
+        Bid tmp = ids[i];
+        string val = "test_" + to_string(ids[i]);
+        ecall_write_node(global_eid, (const char*) tmp.id.data(), val.c_str());
+        root = AVL::insert(root, ids[i]);
+    }
+    Bid del = id;
+    ecall_delete_node(global_eid, (const char*) del.id.data());
+    root = AVL::deleteNode(root, id);
+
+    int res_size = preorder_after_deletion.size();
+    long long *keys = new long long[res_size];
+    ecall_tree_preorder_keys(global_eid, keys, res_size);
+    cout<<"********************"<<endl;
+    cout << "Preorder keys: ";
+    for (int i = 0; i < res_size; i++) {
+        cout << keys[i] << ", ";
+    }
+    cout << endl;
+    for (int i = 0; i < res_size; i++) {
+        assert(keys[i] == preorder_after_deletion[i]);
+    }
+
+
+    while(false) {
         printf("iteration %d\n", it);
         int i;
 //        if (it < 1) {
@@ -790,14 +814,6 @@ int SGX_CDECL main(int argc, char *argv[]) {
 //    ecall_read_node(global_eid, (const char*) kk.id.data(), val);
 //    assert(strcmp(val, "test_6969") == 0);
 //    cout<<"Setup was Successful: "<< val << endl;
-    cout<<"********************"<<endl;
-    ecall_print_tree(global_eid);
-    cout<<"********************"<<endl;
-    Bid k = id;
-    string s = "test_" + to_string(id);
-    ecall_write_node(global_eid, (const char*) k.id.data(), s.c_str());
-    ecall_read_node(global_eid, (const char*) k.id.data(), val);
-    cout <<"Read " << id << ": " << val << endl;
 
     it = 0;
     while(0) {
@@ -825,26 +841,6 @@ int SGX_CDECL main(int argc, char *argv[]) {
         it++;
     }
 
-    cout<<"Delete node " << id << endl;
-    ecall_delete_node(global_eid, (const char*) k.id.data());
-    cout<<"********************"<<endl;
-    ecall_print_tree(global_eid);
-    cout<<"********************"<<endl;
-    ecall_read_node(global_eid, (const char*) k.id.data(), val);
-    cout <<"Read " << id << ": " << val << endl;
-
-    int res_size = preorder_after_deletion.size();
-    long long *keys = new long long[res_size];
-    ecall_tree_preorder_keys(global_eid, keys, res_size);
-    cout<<"********************"<<endl;
-    cout << "Preorder keys: ";
-    for (int i = 0; i < res_size; i++) {
-        cout << keys[i] << ", ";
-    }
-    cout << endl;
-    for (int i = 0; i < res_size; i++) {
-        assert(keys[i] == preorder_after_deletion[i]);
-    }
 
     //******************************************************************************
     //******************************************************************************
@@ -861,8 +857,8 @@ int SGX_CDECL main(int argc, char *argv[]) {
     //------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------
     sgx_destroy_enclave(global_eid);
-    delete val;
-    delete keys;
+    delete[] val;
+    delete[] keys;
 
 
 

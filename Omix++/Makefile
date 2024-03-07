@@ -57,7 +57,7 @@ else
 	Urts_Library_Name := sgx_urts
 endif
 
-App_Cpp_Files := App/App.cpp $(wildcard Common/*.cpp) $(wildcard App/OMAP/*.cpp) 
+App_Cpp_Files := App/App.cpp $(wildcard Common/*.cpp) $(wildcard App/OMAP/*.cpp) App/AVL.cpp
 App_Include_Paths := -IApp -ICommon -I$(SGX_SDK)/include
 
 App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
@@ -231,7 +231,7 @@ Enclave/%.o: Enclave/%.cpp Enclave/Enclave_t.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
-Enclave/%.o: Encalve/%.S
+Enclave/%.o: Enclave/%.S
 	$(CXX) -fPIC -c $< -o $@
 	@echo "CC   <=  $<"
 

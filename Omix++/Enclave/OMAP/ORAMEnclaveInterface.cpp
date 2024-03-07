@@ -56,6 +56,7 @@ void ecall_tree_preorder_keys(long long *keys, size_t len) {
         vector<long long> res = omap->treePreOrderKeys();
         if (res.size() != len) {
             printf("Error converting keys\n");
+            std::copy(res.begin(), res.end(), keys);
         } else {
             std::copy(res.begin(), res.end(), keys);
         }

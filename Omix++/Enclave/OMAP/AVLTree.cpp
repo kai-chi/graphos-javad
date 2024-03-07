@@ -894,8 +894,19 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 #if SGX_DEBUG
         printf("Deleting key=%d...\n", key.getValue());
 #endif
-        node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, true); //READ
-        readWriteCacheNode(rootKey, node, false, false);
+        if (!rootKey.isZero()) {
+            node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, true); //READ
+            readWriteCacheNode(rootKey, node, false, false);
+            remainderIsDummy = remainderIsDummy;
+        } else {
+            node = oram->ReadWrite(dummy, tmpDummyNode, rootPos, rootPos, true, true, true);
+            readWriteCacheNode(dummy, tmpDummyNode, false, true);
+            remainderIsDummy = true;
+        }
+        if (remainderIsDummy) {
+            return retKey;
+        }
+
         if (node->leftID.isZero() || node->rightID.isZero()) {
             if (node->leftID.isZero() && node->rightID.isZero()) {
                 children = 0;
@@ -935,6 +946,9 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                     parentNode->pos = newP;
                     parentPos = newP;
                     readWriteCacheNode(parentKey, parentNode, false, false);
+                    // replace dummy for node
+                    oram->ReadWrite(node->key, tmpDummyNode, node->pos, node->pos, false, false, false);
+                    readWriteCacheNode(node->key, tmpDummyNode, false, false);
 
                 }
                 rootKey = 0;
@@ -988,6 +1002,10 @@ Bid AVLTree::deleteNode2(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 rootPos = childPos;
                 retKey = childBid;
                 lastID = 0;
+                // replace dummy for node
+                oram->ReadWrite(node->key, tmpDummyNode, node->pos, node->pos, false, false, false);
+                readWriteCacheNode(node->key, tmpDummyNode, false, false);
+
                 node = oram->ReadWrite(childBid, tmpDummyNode, childPos, childPos, true, false, true);
 
                 // here trying out constant-time
@@ -1453,7 +1471,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     }
     Node* tmpDummyNode = new Node();
     tmpDummyNode->isDummy = true;
-    Node *node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, true); //READ
+    Node *node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, false); //READ
 
     if (key < node->key)
         node->leftID = deleteNode3(node->leftID, node->leftPos, node->key, node->pos, -1, key, height, dummy, children, depth, isFirstDel, false);
@@ -1507,6 +1525,10 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 }
                 rootKey = 0;
                 rootPos = -1;
+#if SGX_DEBUG
+                printf("Saving node key=%d, isDummy=%d, height=%d, leftID=%llu, rightID=%llu\n",
+                       node->key.getValue(), node->isDummy, node->height, node->leftID.getValue(), node->rightID.getValue());
+#endif
                 oram->ReadWrite(node->key, node, node->pos, node->pos, false, false, false);
             } else {
                 // one child case
@@ -1547,7 +1569,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 rootKey = childBid;
                 rootPos = childPos;
                 retKey = childBid;
-                node = oram->ReadWrite(childBid, tmpDummyNode, childPos, childPos, true, false, true);
+                node = oram->ReadWrite(childBid, tmpDummyNode, childPos, childPos, true, false, false);
             }
         } else {
             // node with two children
@@ -1853,7 +1875,8 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     }
     else {
 #if SGX_DEBUG
-        printf("No balance needed\n");
+        printf("No balance needed. Write node key=%d, isDummy=%d, height=%d, leftID=%llu, rightID=%llu\n",
+               node->key.getValue(), node->isDummy, node->height, node->leftID.getValue(), node->rightID.getValue());
 #endif
         newP = RandomPath();
         oram->ReadWrite(node->key, node, node->pos, newP, false, false, false); //WRITE

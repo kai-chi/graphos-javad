@@ -59,7 +59,7 @@ def run(size, repetitions):
 def plot(sizes):
     data = pd.read_csv(res_file)
     fig = plt.figure(figsize=(10,6))
-    platforms = data['sgx'].unique()
+    platforms = ['sgxv1', 'sgxv2'] #data['sgx'].unique()
 
     plots = ['initTime', 'readTime', 'writeTime', 'deleteTime']
     ylabels = ['Initialization Time(milliseconds)','Search Time(milliseconds)',
@@ -86,7 +86,7 @@ def plot(sizes):
 
     for i in range(len(plots)):
         plt.subplot(2, 4, i+1+4)
-        for algorithm in ['sgxv2', 'sgxv2-epc']:
+        for algorithm in ['sgxv2']: #, 'sgxv2-epc']:
             df = data[data['sgx'] == algorithm]
             omap_sizes = df['size'].values
             df = df[df['size'].isin(omap_sizes)]

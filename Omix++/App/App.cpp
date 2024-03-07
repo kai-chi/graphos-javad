@@ -52,6 +52,7 @@ using namespace std;
  */
 
 #include "Enclave_u.h"
+#include "AVL.h"
 
 
 #ifndef SAFE_FREE
@@ -650,38 +651,21 @@ int SGX_CDECL main(int argc, char *argv[]) {
             id = 13;
             preorder_after_deletion = {6,4,2,1,3,5,9,7,8,11,10,12};
             break;
+        case 20:
+            ids = {10,4,26,2,8,17,30,3,5,13,20,27,19,25};
+            id = 11;
+            preorder_after_deletion = {10,4,2,3,8,5,26,17,13,20,19,25,30,27};
+            break;
         default:
             break;
     }
 
-    if (true) {
+    if (false) {
         ecall_measure_omap_speed(global_eid, &t, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
     }
 //    ecall_measure_omap_setup_speed(global_eid, &t, maxSize);
-
-    // DOHEAP TEST
-    if (false) {
-        ecall_setup_oheap(global_eid, maxSize);
-        for (int i : ids) {
-            int k = 0;
-            int v = i;
-            printf("heap insert k=%d, v=%d\n", k, v);
-            ecall_execute_heap_operation(global_eid, &k, &v, 2);
-        }
-        std::sort(ids.begin(), ids.end());
-        for (int i : ids) {
-            int k = -1;
-            int v = -1;
-            ecall_execute_heap_operation(global_eid, &k, &v, 1);
-            printf("heap min k=%d, v=%d\n", k, v);
-//            assert(i == k);
-//            assert(i == v);
-        }
-        sgx_destroy_enclave(global_eid);
-        return 0;
-    }
 
 
     //******************************************************************************
@@ -712,11 +696,94 @@ int SGX_CDECL main(int argc, char *argv[]) {
     ocall_nwrite_ramStore_by_client(&indexes, &ciphertexts);
     ecall_setup_omap_by_client(global_eid, maxSize, (const char*) rootKey.id.data(), rootPos, (const char*) secretkey.data());
 
-    for (int i = 0; i < ids_length; i++) {
-        Bid k = ids[i];
-        string val = "test_" + to_string(ids[i]);
+    AVL::Node *root = NULL;
+    int it = 0;
+//    srand (time(NULL));
+    srand (12345);
+
+    while(true) {
+        printf("iteration %d\n", it);
+        int i;
+//        if (it < 1) {
+        i = rand() % (maxSize/2) + 1;
+        Bid k = i;
+        string val = "test_" + to_string(i);
+        printf("Write %d\n", i);
         ecall_write_node(global_eid, (const char*) k.id.data(), val.c_str());
+        root = AVL::insert(root, i);
+        printf("************ iteration %d - after Write operation ************************\n", it);
+        ecall_print_tree(global_eid);
+        printf("****************************************\n");
+//        }
+        i = rand() % (maxSize/2) + 1;
+        printf("Delete %d\n", i);
+        Bid l = i;
+        ecall_delete_node(global_eid, (const char*) l.id.data());
+        root = AVL::deleteNode(root, i);
+
+        long long *keys = new long long[maxSize];
+        ecall_tree_preorder_keys(global_eid, keys, maxSize);
+        std::vector<int> avlKeys = AVL::preOrder(root);
+        printf("************ iteration %d - after Delete operation ************************\n", it);
+        ecall_print_tree(global_eid);
+        printf("****************************************\n");
+        AVL::printTree(root, 0);
+        printf("****************************************\n");
+        for (auto elem : avlKeys) {
+            cout << elem << ",";
+        }
+        cout << endl;
+        for (int i = 0; i < avlKeys.size(); i++) {
+            if (avlKeys.at(i) != keys[i]) {
+                throw runtime_error("");
+            }
+        }
+        it++;
     }
+
+    if (false) {
+        ids = {73,627,753,740,756,758,582,277,436,57,401,233,546,460,389,669,45,757,135,751,503,203,896,109,467,907,619,834,494,607,155,626,225,775,787,642,661,254,315,491,85,697,633,234,647,412,82,443,268,851,932,884,739,605,850,866,32,830,929,939,431,841,1022,294,17,64,236,238,72,480,950,367,292,600,951,872,519,551,930,227,317,38,995,439,587,947,572,54,815,181,337,836,1023,163,506,286,699,941,944,663,362,629,384,678,117,143,931,393,188,65,205,659,971,231,36,927,618,309,886,257,160,261,29,420,977,745,545,120,848,711,263,161,303,122,346,754,253,265,11,568,698,996,171,904,976,383,175,969,417,786,937,352,604,759,986,844,718,39,128,6,1011,191,137,746,554,335,905,55,838,441,101,560,585,528,854,433,767,703,890,534,517,52,48,639,542,12,934,115,89,110,400,207,768,440,81,186,603,514,461,793,49,500,970,928,522,77,485,272,354,90,410,426,720,914,316,313,457,423,468,305,874,902,655,645,532,79,50,861,474,891,174,434,671,578,430,364,806,13,392,133,964,849,60,347,339,805,738,157,1017,567,414,660,262,916,732,75,134,773,376,766,275,348,18,365,737,543,978,654,409,897,84,33,1001,264,496,271,445,270,473,99,100,908,247,88,811,385,325,176,398,350,363,95,688,318,991,535,250,1015,839,396,1003,510,855,78,959,25,549,727,586,214,150,547,269,266,695,784,458,80,332,824,609,465,432,646,523,525,707,812,816,832,536,244,562,428,493,783,624,829,847,621,418,216,831,566,602,198,497,674,559,518,387,989,394,563,664,878,375,51,91,888,575,278,1020,326,447,199,823,329,679,769,464,399,42,822,144,606,741,252,803,222,961,858,463,915,7,356,62,299,131,648,651,355,899,945,729,918,419,200,219,946,689,280,83,859,66,291,314,368,256,864,926,125,304,797,923,103,245,548,571,924,610,895,138,565,116,853,35,781,344,817,577,63,232,212,340,454,999,324,846,142,894,863,974,218,885,402,192,71,714,448,46,752,993,113,527,229,865,809,725,488,146,183,168,129,185,843,658,359,209,58,706,379,649,761,30,366,742,869,28,722,217,564,901,22,471,148,700,302,875,239,145,19,684,637,382,693,297,190,86,795,919,632,968,470,868,319,873,338,499,840,361,747,453,903,614,613,202,943,1024,702,255,529,139,588,819,992,673,504,508,936,828,967,223,1019,119,701,988,274,774,656,173,495,530,289,910,164,15,736,351,193,801,67,141,483,505,425,240,34,807,267,666,954,592,1021,260,403,415,672,108,667,342,920,293,388,634,511,381,391,1008,301,56,743,123,599,900,498,416,909,47,156,126,149,197,328,802,230,311,1009,285,241,765,636,1004,377,10,749,596,876,979,657,189,372,182,987,479,300,475,860,459,513,579,653,159,590,20,194,570,76,98,349,74,574,573,290,407,677,158,721,748,687,558,972,533,733,380,215,818,611,333,53,1013,792,411,760,24,597,102,808,981,162,427,676,178,23,140,550,26,184,631,593,97,877,957,776,43,437,555,764,251,358,717,778,696,492,856,922,622,625,963,237,833,424,312,307,1014,650,615,106,92,616,369,455,1,502,827,1018,798,208,152,526,942,994,906,195,933,630,694,404,670,70,644,1010,446,373,406,612,845,2,889,353,643,595,744,983,321,965,136,395,531,357,790,814,682,879,226,958,708,652,882,917,360,284,898,583,537,422,166,243,93,617,390,211,287,935,788,690,509,539,487,322,785,728,771,516,984,334,452,429,306,881,330,800,966,327,435,308,343,320,638,880,955,731,956,378,735,569,213,196,111,552,336,1016,750,456,69,892,31,235,105,985,507,5,124,224,799,893,476,482,794,925,810,789,821,118,172,561,477,478,685,952,628,709,675,397,442,665,276,295,557,104,449,296,21,4,584,331,975,591,512,9,755,887,980,870,982,541,730,288,705,837,371,242,279,1007,912,154,114,179,710,273,87,462,576,553,723,871,973,147,712,668,228,501,246,107,413,204,719,780,804,481,580,370,121,130,948,842,323,997,96,259,589,421,635,601,763,598,167,27,826,220,438,127,94,44,283,538,298,249,210,451,374,466,490,180,726,61,772,68,153,594,544,921,581,41,450,762,704,883,515,724,132,408,782,486,683,37,341,791,820,953,911,201,686,444,345,681,862,187,469,169,16,520,489,779,282,1012,258,949,777,112,913,608,691,770,998,867,170,623,857,641,3,484,835,8,556,165,221,716,1000,938,662,206,248,962,540,310,734,1002,40,177,405,151,472,825,620,521,14,524,640,386,813,1006,940,692,796,852,1005,281,59,990,713,715,680,960};
+        int batch = 100;
+        int windowSize = 100;
+        int currentSize = 0;
+        int deleteIndex = 0;
+        int insertIndex = 0;
+        ids_length = ids.size();
+        for (int i = 0; i < ids_length; i += batch) {
+            // add new batch
+            printf("Insert %d/%d\n", i, ids_length);
+            while (insertIndex < ids_length && insertIndex < i+batch) {
+                printf("%d,", ids[insertIndex]);
+                Bid k = ids[insertIndex];
+                string val = "test_" + to_string(ids[insertIndex]);
+                ecall_write_node(global_eid, (const char*) k.id.data(), val.c_str());
+                currentSize++;
+                insertIndex++;
+            }
+            printf("\n\n");
+            // delete if exceeds
+            if (currentSize > windowSize) {
+                printf("delete...\n");
+                for (int i = deleteIndex; i < ids_length && i < deleteIndex+batch; i++) {
+                    Bid k = ids[i];
+                    printf("%d,", ids[i]);
+                    ecall_delete_node(global_eid, (const char*) k.id.data());
+                }
+                printf("\n\n");
+                deleteIndex += batch;
+                currentSize -= batch;
+            }
+            printf("currentSize=%d, insertIndex=%d, deleteIndex=%d\n", currentSize, insertIndex, deleteIndex);
+        }
+        sgx_destroy_enclave(global_eid);
+        return 0;
+    }
+
+//    for (int i = 0; i < ids_length; i++) {
+//        Bid k = ids[i];
+//        string val = "test_" + to_string(ids[i]);
+//        ecall_write_node(global_eid, (const char*) k.id.data(), val.c_str());
+//    }
 
     char* val = new char[16];
 
@@ -727,8 +794,37 @@ int SGX_CDECL main(int argc, char *argv[]) {
     ecall_print_tree(global_eid);
     cout<<"********************"<<endl;
     Bid k = id;
+    string s = "test_" + to_string(id);
+    ecall_write_node(global_eid, (const char*) k.id.data(), s.c_str());
     ecall_read_node(global_eid, (const char*) k.id.data(), val);
     cout <<"Read " << id << ": " << val << endl;
+
+    it = 0;
+    while(0) {
+        cout << "Iteration " << it << endl;
+        id = rand() % (maxSize/2) + 1;
+        cout<<"Delete node " << id << endl;
+        Bid k = id;
+        ecall_delete_node(global_eid, (const char*) k.id.data());
+        cout<<"********************"<<endl;
+        ecall_print_tree(global_eid);
+        cout<<"********************"<<endl;
+        int res_size = preorder_after_deletion.size();
+        long long *keys = new long long[res_size];
+        ecall_tree_preorder_keys(global_eid, keys, res_size);
+        for (int i = 0; i < res_size; i++) {
+            assert(keys[i] == preorder_after_deletion[i]);
+        }
+        id = rand() % (maxSize/2) + 1;
+        cout<<"Write node " << id << endl;
+        Bid kk = id;
+        string val = "test_" + to_string(id);
+        ecall_write_node(global_eid, (const char*) kk.id.data(), val.c_str());
+        ecall_print_tree(global_eid);
+        cout<<"********************"<<endl;
+        it++;
+    }
+
     cout<<"Delete node " << id << endl;
     ecall_delete_node(global_eid, (const char*) k.id.data());
     cout<<"********************"<<endl;
@@ -737,15 +833,16 @@ int SGX_CDECL main(int argc, char *argv[]) {
     ecall_read_node(global_eid, (const char*) k.id.data(), val);
     cout <<"Read " << id << ": " << val << endl;
 
-    long long *keys = new long long[ids_length-1];
-    ecall_tree_preorder_keys(global_eid, keys, ids_length-1);
+    int res_size = preorder_after_deletion.size();
+    long long *keys = new long long[res_size];
+    ecall_tree_preorder_keys(global_eid, keys, res_size);
     cout<<"********************"<<endl;
     cout << "Preorder keys: ";
-    for (int i = 0; i < ids_length - 1; i++) {
+    for (int i = 0; i < res_size; i++) {
         cout << keys[i] << ", ";
     }
     cout << endl;
-    for (int i = 0; i < ids_length - 1; i++) {
+    for (int i = 0; i < res_size; i++) {
         assert(keys[i] == preorder_after_deletion[i]);
     }
 

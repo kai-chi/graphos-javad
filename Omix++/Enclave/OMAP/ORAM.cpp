@@ -267,6 +267,7 @@ void ORAM::FetchPath(long long leaf) {
     long long node = leaf;
 
     node += bucketCount / 2;
+    // check if some Buckets are already there for node
     if (virtualStorage.count(node) == 0) {
         nodesIndex.push_back(node);
     } else {
@@ -274,6 +275,7 @@ void ORAM::FetchPath(long long leaf) {
     }
 
     for (int d = depth - 1; d >= 0; d--) {
+        // get index of parent in a binary tree
         node = (node + 1) / 2 - 1;
         if (virtualStorage.count(node) == 0) {
             nodesIndex.push_back(node);
@@ -308,6 +310,12 @@ void ORAM::FetchPath(long long leaf) {
 //    }
 
 Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, bool isIncRead) {
+    if (!isRead) {
+        printf("ORAM WRITE (isDummy==node: %d): bid: %d, key: %d, pos: %d, newPos: %d, isDummy: %d, leftID/pos: %d/%d, rightID/pos: %d/%d\n",
+               isDummy==inputnode->isDummy, bid.getValue(), inputnode->key.getValue(),
+               lastLeaf, newLeaf, inputnode->isDummy, inputnode->leftID.getValue(), inputnode->leftPos,
+               inputnode->rightID.getValue(), inputnode->rightPos);
+    }
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);
         throw runtime_error("Node id is not set");
@@ -330,12 +338,14 @@ Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, uns
 
     Node* tmpWrite = Node::clone(inputnode);
     tmpWrite->pos = newLeaf;
+    tmpWrite->pos = Node::conditional_select((unsigned long long) -1, tmpWrite->pos, tmpWrite->isDummy);
 
     Node* res = new Node();
     res->isDummy = true;
     res->index = nextDummyCounter++;
     res->key = nextDummyCounter++;
     bool write = !isRead;
+    Bid dummy = nextDummyCounter++;
 
     vector<Node*> nodesList(stash.nodes.begin(), stash.nodes.end());
 
@@ -347,6 +357,16 @@ Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, uns
         bool match = Node::CTeq(Bid::CTcmp(node->key, bid), 0) && !node->isDummy;
         node->isDummy = Node::conditional_select(true, node->isDummy, !isDummy && match && write);
         node->pos = Node::conditional_select(newLeaf, node->pos, !isDummy && match);
+        //
+        bool del = !isDummy && match && write;
+        for (int k = 0; k < res->key.id.size(); k++) {
+            node->key.id[k] = Node::conditional_select((byte_t)0, node->key.id[k], del);
+        }
+        node->index = Node::conditional_select((long long) nextDummyCounter++, (long long) node->index, del);
+        node->pos = Node::conditional_select((unsigned long long) -1, node->pos, del);
+        node->evictionNode = Node::conditional_select((long long) -1, node->evictionNode, del);
+
+        //
         bool choice = !isDummy && match && isRead && !node->isDummy;
         res->index = Node::conditional_select((long long) node->index, (long long) res->index, choice);
         res->isDummy = Node::conditional_select(node->isDummy, res->isDummy, choice);
@@ -478,6 +498,8 @@ Node* ORAM::ReadWriteTest(Bid bid, Node* inputnode, unsigned long long lastLeaf,
 }
 
 Node* ORAM::ReadWrite(Bid bid, unsigned long long lastLeaf, unsigned long long newLeaf, bool isDummy, unsigned long long newChildPos, Bid targetNode) {
+    printf("ORAM WRITE 2: bid: %d, isDummy: %d, targetNode: %d\n",
+           bid.getValue(), isDummy, targetNode.getValue());
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);
         throw runtime_error("Node id is not set");
@@ -546,6 +568,10 @@ Node* ORAM::ReadWrite(Bid bid, unsigned long long lastLeaf, unsigned long long n
 }
 
 Node* ORAM::ReadWrite(Bid bid, Node* inputnode, unsigned long long lastLeaf, unsigned long long newLeaf, bool isRead, bool isDummy, std::array< byte_t, 16> value, bool overwrite, bool isIncRead) {
+    if (!isRead) {
+        printf("ORAM WRITE 3 (isDummy==node: %d): bid: %d, key: %d, isDummy: %d, leftID: %d, rightID: %d\n",
+               isDummy==inputnode->isDummy, bid.getValue(), inputnode->key.getValue(), inputnode->isDummy, inputnode->leftID.getValue(), inputnode->rightID.getValue());
+    }
     if (bid == 0) {
         printf("bid is 0 dummy is:%d\n", isDummy ? 1 : 0);
         throw runtime_error("Node id is not set");
@@ -661,6 +687,7 @@ void ORAM::evict(bool evictBucketsForORAM) {
         ocall_start_timer(10);
     }
 
+    // compute the bucket index of all nodes in the path from currentLeaf to the root of the tree
     vector<long long> firstIndexes;
     long long tmpleaf = currentLeaf;
     tmpleaf += bucketCount / 2;
@@ -671,17 +698,20 @@ void ORAM::evict(bool evictBucketsForORAM) {
         firstIndexes.push_back(tmpleaf);
     }
 
+    // compute the intersection of each node's position (assigned leaf) with currentLeaf using XOR
     for (Node* node : stash.nodes) {
         long long xorVal = 0;
         xorVal = Node::conditional_select((unsigned long long) 0, node->pos ^ currentLeaf, node->isDummy);
         long long indx = 0;
 
+        // find its corresponding level in the tree
         indx = (long long) floor(log2(Node::conditional_select(xorVal, (long long) 1, Node::CTcmp(xorVal, 0))));
         indx = indx + Node::conditional_select(1, 0, Node::CTcmp(xorVal, 0));
 
         for (long long i = 0; i < firstIndexes.size(); i++) {
             bool choice = Node::CTeq(i, indx);
             long long value = firstIndexes[i];
+            // set the evicitonNode (bucket id) of the level index is the same as the found bucket (indx)
             node->evictionNode = Node::conditional_select(firstIndexes[indx], node->evictionNode, !node->isDummy && choice);
         }
     }

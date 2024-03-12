@@ -2421,9 +2421,13 @@ string AVLTree::search(Node* rootNode, Bid omapKey) {
         bool isDummyAction = Node::CTeq(Node::CTcmp(dummyState, 1), 0);
         head = oram->ReadWrite(curKey, lastPos, newPos, isDummyAction, rnd2, omapKey);
 
+        // dummyState == 1
         bool cond1 = Node::CTeq(Node::CTcmp(dummyState, 1), 0);
+        // head->key > omapKey
         bool cond2 = Node::CTeq(Bid::CTcmp(head->key, omapKey), 1);
+        // head->key < omapKey
         bool cond3 = Node::CTeq(Bid::CTcmp(head->key, omapKey), -1);
+        // head->key == omapKey
         bool cond4 = Node::CTeq(Bid::CTcmp(head->key, omapKey), 0);
 
         lastPos = Node::conditional_select(rnd, lastPos, cond1);

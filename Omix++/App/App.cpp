@@ -660,8 +660,9 @@ int SGX_CDECL main(int argc, char *argv[]) {
             break;
     }
 
-    if (false) {
-        ecall_measure_omap_speed(global_eid, &t, maxSize);
+    if (true) {
+//        ecall_measure_omap_speed(global_eid, &t, maxSize);
+        ecall_measure_btree_read_speed(global_eid, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
     }

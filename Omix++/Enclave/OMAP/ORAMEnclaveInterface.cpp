@@ -142,6 +142,50 @@ long long getValue(std::array< uint8_t, 16> id) {
     return result;
 }
 
+void ecall_measure_btree_read_speed(int testSize) {
+    ecall_setup_oram(testSize);
+    printf("Insert random values\n");
+    for (int i = 0; i < testSize; i++) {
+        uint32_t randval;
+        sgx_read_rand((unsigned char *) &randval, 4);
+        int num = (randval % (testSize)) + 1;
+        Bid id = num;
+        string val = "test_" + to_string(id.getValue());
+        ecall_write_node((const char *) id.id.data(), val.c_str());
+    }
+
+    printf("Warm up DOMAP\n");
+    for (int i = 0; i < 2000; i++) {
+        uint32_t randval;
+        sgx_read_rand((unsigned char *) &randval, 4);
+        int num = (randval % (testSize)) + 1;
+        Bid id = num;
+        char* val = new char[16];
+        ecall_read_node((const char*) id.id.data(), val);
+        delete[] val;
+    }
+
+    printf("Begin test\n");
+    int tests = 100;
+    double totalReadTime = 0, readTime = 0;
+    for (int i = 0; i < tests; i++) {
+        uint32_t randval;
+        sgx_read_rand((unsigned char *) &randval, 4);
+        int num = (randval % (testSize)) + 1;
+        Bid id = num;
+        char* val = new char[16];
+        ocall_start_timer(535);
+        ecall_read_node((const char*) id.id.data(), val);
+        ocall_stop_timer(&readTime, 535);
+        delete[] val;
+        totalReadTime += readTime;
+    }
+
+    printf("Average OMAP Read Time: %f\n", totalReadTime / tests);
+
+
+}
+
 double ecall_measure_omap_speed(int testSize) {
     double time1=0, time2=0, time3=0, time4=0, total = 0, totalWrite = 0, totalRead = 0, totalDelete = 0;
     ecall_setup_oram(testSize);

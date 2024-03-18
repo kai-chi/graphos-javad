@@ -518,7 +518,13 @@ int SGX_CDECL main(int argc, char *argv[]) {
     /* My Codes */
     int maxSize = 32;
     int test_case = 6;
-    if (argc == 3) {
+    int experiment = 0;
+    if (argc == 4) {
+        maxSize = stoi(argv[1]);
+        test_case = stoi(argv[2]);
+        experiment = stoi(argv[3]);
+    }
+    else if (argc == 3) {
         maxSize = stoi(argv[1]);
         test_case = stoi(argv[2]);
     } else if (argc == 2) {
@@ -660,9 +666,15 @@ int SGX_CDECL main(int argc, char *argv[]) {
             break;
     }
 
-    if (true) {
+    if (experiment == 1) {
 //        ecall_measure_omap_speed(global_eid, &t, maxSize);
         ecall_measure_btree_read_speed(global_eid, maxSize);
+        sgx_destroy_enclave(global_eid);
+        return 0;
+    }
+    else if (experiment == 2) {
+//        ecall_measure_omap_speed(global_eid, &t, maxSize);
+        ecall_measure_btree_read_write_speed(global_eid, maxSize);
         sgx_destroy_enclave(global_eid);
         return 0;
     }

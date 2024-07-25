@@ -827,6 +827,7 @@ Bid AVLTree::insert(Bid rootKey, unsigned long long& rootPos, Bid omapKey, strin
 Node * AVLTree::minValueNode(Bid rootKey, unsigned long long& rootPos, bool isDummyOp) {
     Node* tmpDummyNode = new Node();
     tmpDummyNode->isDummy = true;
+    tmpDummyNode->key.setValue(oram->nextDummyCounter++);
     Node *n = new Node();
     n->isDummy = true;
     bool remainderIsDummy = isDummyOp;
@@ -844,6 +845,7 @@ Node * AVLTree::minValueNode(Bid rootKey, unsigned long long& rootPos, bool isDu
     // while depth < oram->depth * 1.44
     while (CTeq(CTcmp(depth, (int) ((float) oram->depth * 1.44)), -1)) {
         if (!remainderIsDummy && !n->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             n = oram->ReadWrite(n->leftID, tmpDummyNode, n->leftPos, n->leftPos, true, false, false);
             if (n->leftID.isZero()) {
                 remainderIsDummy = true;
@@ -851,6 +853,7 @@ Node * AVLTree::minValueNode(Bid rootKey, unsigned long long& rootPos, bool isDu
                 remainderIsDummy = false;
             }
         } else {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, true, true);
             remainderIsDummy = remainderIsDummy;
         }
@@ -1471,6 +1474,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     }
     Node* tmpDummyNode = new Node();
     tmpDummyNode->isDummy = true;
+    tmpDummyNode->key.setValue(oram->nextDummyCounter++);
     Node *node = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, false); //READ
 
     if (key < node->key)
@@ -1488,6 +1492,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 #if SGX_DEBUG
                 printf("No child case\n");
 #endif
+                tmpDummyNode->key.setValue(oram->nextDummyCounter++);
                 Node *parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
 #if SGX_DEBUG
                 printf("parentNode key=%d, height=%d, leftID=%llu, rightID=%llu, parentRootRelation=%d\n",
@@ -1539,6 +1544,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                                node->leftID : node->rightID;
                 unsigned long long childPos = node->rightID.isZero() ?
                                               node->leftPos : node->rightPos;
+                tmpDummyNode->key.setValue(oram->nextDummyCounter++);
                 Node *parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
 #if SGX_DEBUG
                 printf("parentNode key=%d, height=%d, leftID=%llu, rightID=%llu, parentRootRelation=%d\n",
@@ -1569,6 +1575,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                 rootKey = childBid;
                 rootPos = childPos;
                 retKey = childBid;
+                tmpDummyNode->key.setValue(oram->nextDummyCounter++);
                 node = oram->ReadWrite(childBid, tmpDummyNode, childPos, childPos, true, false, false);
             }
         } else {
@@ -1585,6 +1592,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 //                parentNode->isDummy = true;
                 newP = RandomPath();
             } else {
+                tmpDummyNode->key.setValue(oram->nextDummyCounter++);
                 parentNode = oram->ReadWrite(parentKey, tmpDummyNode, parentPos, parentPos, true, false, false);
                 if (parentRootRelation == -1) {
                     parentNode->leftID.setValue(successor->key.getValue());
@@ -1622,12 +1630,14 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
     int leftHeight = 0, rightHeight = 0;
     Node *leftNode, *rightNode;
     if (!node->leftID.isZero()) {
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         leftNode = oram->ReadWrite(node->leftID, tmpDummyNode, node->leftPos, node->leftPos, true, false, false);
         readWriteCacheNode(node->leftID, leftNode, false, false);
         leftHeight = leftNode->height;
     }
 
     if (!node->rightID.isZero()) {
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         rightNode = oram->ReadWrite(node->rightID, tmpDummyNode, node->rightPos, node->rightPos, true, false, false);
         readWriteCacheNode(node->rightID, rightNode, false, false);
         rightHeight = rightNode->height;
@@ -1653,10 +1663,12 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 #endif
         Node *leftLeftNode = nullptr, *leftRightNode = nullptr;
         if (!leftNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
             readWriteCacheNode(leftLeftNode->key, leftLeftNode, false, false);
         }
         if (!leftNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
             readWriteCacheNode(leftRightNode->key, leftRightNode, false, false);
         }
@@ -1697,6 +1709,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 
         Node* leftRightNode=nullptr, *leftLeftNode=nullptr, *leftRightLeftNode=nullptr, *leftRightRightNode=nullptr;
         if (!leftNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftRightNode = oram->ReadWrite(leftNode->rightID, tmpDummyNode, leftNode->rightPos, leftNode->rightPos, true, false, false);
             readWriteCacheNode(leftNode->rightID, leftRightNode, false, false); //READ
         }
@@ -1704,12 +1717,14 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 
         int leftLeftHeight = 0;
         if (!leftNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftLeftNode = oram->ReadWrite(leftNode->leftID, tmpDummyNode, leftNode->leftPos, leftNode->leftPos, true, false, false);
             readWriteCacheNode(leftNode->leftID, leftLeftNode, false, false); //READ
             leftLeftHeight = leftLeftNode->height;
         }
 
         if (!leftRightNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftRightLeftNode = oram->ReadWrite(leftRightNode->leftID, tmpDummyNode, leftRightNode->leftPos, leftRightNode->leftPos, true, false, false);
             readWriteCacheNode(leftRightNode->leftID, leftRightLeftNode, false, false); //READ
         }
@@ -1719,6 +1734,7 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                leftNode->key.getValue(), leftRightNode->key.getValue(), leftLeftHeight);
 #endif
         if (!leftRightNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             leftRightRightNode = oram->ReadWrite(leftRightNode->rightID, tmpDummyNode, leftRightNode->rightPos, leftRightNode->rightPos, true, false, false);
             readWriteCacheNode(leftRightNode->rightID, leftRightRightNode, false, false); //READ
         }
@@ -1769,10 +1785,12 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
 #endif
         Node *rightLeftNode=nullptr, *rightRightNode=nullptr;
         if (!rightNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
             readWriteCacheNode(rightLeftNode->key, rightLeftNode, false, false);
         }
         if (!rightNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightRightNode = oram->ReadWrite(rightNode->rightID, tmpDummyNode, rightNode->rightPos, rightNode->rightPos, true, false, false);
             readWriteCacheNode(rightRightNode->key, rightRightNode, false, false);
         }
@@ -1806,12 +1824,14 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
         Node* rightLeftNode=nullptr, *rightRightNode=nullptr, *rightLeftLeftNode=nullptr, *rightLeftRightNode=nullptr;
 
         if (!rightNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightLeftNode = oram->ReadWrite(rightNode->leftID, tmpDummyNode, rightNode->leftPos, rightNode->leftPos, true, false, false);
             readWriteCacheNode(rightNode->leftID, rightLeftNode, true, false); //READ
         }
 
         int rightRightHeight = 0;
         if (!rightNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightRightNode = oram->ReadWrite(rightNode->rightID, tmpDummyNode, rightNode->rightPos, rightNode->rightPos, true, false, false);
             readWriteCacheNode(rightRightNode->key, rightRightNode, true, false); //READ
             rightRightHeight = rightRightNode->height;
@@ -1823,11 +1843,13 @@ Bid AVLTree::deleteNode3(Bid rootKey, unsigned long long& rootPos, Bid parentKey
                rightNode->key.getValue(), rightLeftNode->key.getValue(), rightRightHeight);
 #endif
         if(!rightLeftNode->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightLeftLeftNode = oram->ReadWrite(rightLeftNode->leftID, tmpDummyNode, rightLeftNode->leftPos, rightLeftNode->leftPos, true, false, false);
             readWriteCacheNode(rightLeftNode->leftID, rightLeftLeftNode, false, false); //READ
         }
 
         if(!rightLeftNode->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rightLeftRightNode = oram->ReadWrite(rightLeftNode->rightID, tmpDummyNode, rightLeftNode->rightPos, rightLeftNode->rightPos, true, false, false);
             readWriteCacheNode(rightLeftNode->rightID, rightLeftRightNode, false, false); //READ
         }
@@ -2480,25 +2502,33 @@ int AVLTree::getBalance(Bid rootKey, unsigned long long& rootPos, bool isDummyOp
 
 
     if (!isDummyOp && !rootKey.isZero()) {
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         N = oram->ReadWrite(rootKey, tmpDummyNode, rootPos, rootPos, true, false, true);
         if (!N->leftID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             lNode = oram->ReadWrite(N->leftID, tmpDummyNode, N->leftPos, N->leftPos, true, false, true);
             lHeight = lNode->height;
         } else {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             lNode = oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, false, false);
             lHeight = lHeight;
         }
         if (!N->rightID.isZero()) {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rNode = oram->ReadWrite(N->rightID, tmpDummyNode, N->rightPos, N->rightPos, true, false, true);
             rHeight = rNode->height;
         } else {
+            tmpDummyNode->key.setValue(oram->nextDummyCounter++);
             rNode = oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, false, false);
             rHeight = rHeight;
         }
     } else {
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         N = oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, false, false);
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         lNode = oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, false, false);
         lHeight = lHeight;
+        tmpDummyNode->key.setValue(oram->nextDummyCounter++);
         rNode = oram->ReadWrite(dummy, tmpDummyNode, dummyPos, dummyPos, true, false, false);
         rHeight = rHeight;
     }

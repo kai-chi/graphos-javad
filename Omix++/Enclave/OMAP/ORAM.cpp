@@ -680,10 +680,11 @@ block ORAM::convertNodeToBlock(Node* node) {
 void ORAM::finilize(bool noDummyOp) {
     if (!noDummyOp && stashCounter == 100) {
         stashCounter = 0;
-        EvictBuckets();
+//        EvictBuckets();
     } else {
         stashCounter++;
     }
+    EvictBuckets();
 }
 
 void ORAM::evict(bool evictBucketsForORAM) {
